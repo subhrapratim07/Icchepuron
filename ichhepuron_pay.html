@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ichhepuron — Monthly Dues</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --paper:#F7F3EA;
+    --ink:#1E2A4A;
+    --ink-soft:#4A5578;
+    --marigold:#E8A33D;
+    --marigold-dark:#B97A1F;
+    --terracotta:#B5654A;
+    --sindoor:#B23A48;
+    --sindoor-bg:#F6E2E0;
+    --leaf:#3F7554;
+    --leaf-bg:#E1EEE3;
+    --line:#DCD3BF;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Work Sans',sans-serif;}
+  .app{max-width:920px;margin:0 auto;padding:28px 20px 60px;}
+  h1,h2,h3{font-family:'Tiro Bangla',serif;font-weight:400;margin:0;}
+  .brand{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .brand h1{font-size:30px;color:var(--ink);}
+  .brand .tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--terracotta);font-weight:600;}
+  .alpona{height:14px;width:100%;margin:18px 0 26px;opacity:.8;}
+  .row{display:flex;gap:10px;flex-wrap:wrap;}
+  @media(max-width:480px){ .row{flex-direction:column;align-items:stretch;} .row button{width:100%;} }
+  button.primary,button.ghost{
+    font-family:'Work Sans',sans-serif;font-size:14px;font-weight:500;
+    border-radius:10px;padding:10px 18px;cursor:pointer;border:1.5px solid var(--ink);
+  }
+  button.primary{background:var(--ink);color:var(--paper);}
+  button.primary:hover{background:#141d38;}
+  button.ghost{background:transparent;color:var(--ink);}
+  button.ghost:hover{background:rgba(30,42,74,.06);}
+  button.small{font-size:12px;padding:6px 12px;border-radius:8px;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  input,select{
+    font-family:'Work Sans',sans-serif;font-size:14px;padding:9px 12px;
+    border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);width:100%;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--marigold-dark);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .home-choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:24px;}
+  .choice-card{
+    background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:26px 22px;
+    cursor:pointer;transition:border-color .15s;
+  }
+  .choice-card:hover{border-color:var(--marigold-dark);}
+  .choice-card h3{font-size:20px;margin-bottom:6px;}
+  .choice-card p{font-size:13px;color:var(--ink-soft);margin:0;line-height:1.5;}
+  .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:3px 10px;border-radius:20px;}
+  .badge.due{background:var(--sindoor-bg);color:var(--sindoor);}
+  .badge.clear{background:var(--leaf-bg);color:var(--leaf);}
+  .month-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:16px 0;}
+  .month-cell{
+    border:1.5px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:12px;
+    background:#fff;cursor:default;user-select:none;
+  }
+  .month-cell.paid{background:var(--leaf-bg);border-color:var(--leaf);color:#1E4A2E;}
+  .month-cell.due{background:var(--sindoor-bg);border-color:var(--sindoor);color:#6E1F28;}
+  .month-cell .m{display:block;font-weight:600;margin-bottom:2px;}
+  .month-cell.clickable{cursor:pointer;}
+  .month-cell.clickable:hover{filter:brightness(.96);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;}
+  th{font-weight:600;color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  tr:hover td{background:rgba(232,163,61,.06);}
+  .num{font-family:'JetBrains Mono',monospace;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .muted{color:var(--ink-soft);font-size:13px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;flex:1;min-width:120px;}
+  .stat .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;}
+  .stat .l{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+  .stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .err{color:var(--sindoor);font-size:12.5px;margin-top:6px;}
+  .toast{
+    position:sticky;top:12px;z-index:10;background:var(--leaf-bg);color:#1E4A2E;
+    border:1px solid var(--leaf);border-radius:10px;padding:10px 16px;font-size:13px;margin-bottom:14px;
+  }
+  .search-wrap{position:relative;}
+  .dropdown{
+    position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--line);
+    border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06);
+  }
+  .dropdown div{padding:9px 12px;font-size:13.5px;cursor:pointer;}
+  .dropdown div:hover{background:var(--paper);}
+  a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;cursor:pointer;}
+  a.back:hover{text-decoration:underline;}
+  label.lbl{font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .month-cell.selectable{cursor:pointer;}
+  .month-cell.selectable:hover{filter:brightness(.97);}
+  .month-cell.selected{outline:2.5px solid var(--marigold-dark);outline-offset:1px;}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .tab{
+    font-size:13px;font-weight:500;padding:8px 14px;border-radius:9px;cursor:pointer;
+    border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);
+  }
+  .tab.active{border-color:var(--ink);color:var(--ink);background:var(--paper);}
+  .receipt{
+    background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:32px;max-width:460px;margin:0 auto;
+  }
+  .receipt .rh{text-align:center;margin-bottom:18px;padding-bottom:16px;border-bottom:1px dashed var(--line);}
+  .receipt .rh h2{font-size:22px;}
+  .receipt .rh p{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--terracotta);margin-top:4px;}
+  .receipt .rrow{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;}
+  .receipt .rrow .k{color:var(--ink-soft);}
+  .receipt .ramt{text-align:center;margin:18px 0;}
+  .receipt .ramt .n{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:500;}
+  .receipt .rfoot{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);text-align:center;font-size:11.5px;color:var(--ink-soft);}
+  @media print{
+    body *{visibility:hidden;}
+    .receipt, .receipt *{visibility:visible;}
+    .receipt{position:absolute;top:0;left:0;right:0;margin:0 auto;border:none;}
+    .no-print{display:none !important;}
+  }
+  @media(max-width:480px){
+    .app{padding:18px 14px 48px;}
+    .brand h1{font-size:26px;}
+    .receipt{padding:22px 16px;max-width:100%;}
+    .receipt .rh h2{font-size:19px;}
+    .receipt .ramt .n{font-size:26px;}
+    .receipt .rrow{flex-wrap:wrap;gap:2px;}
+    .receipt .rrow span:last-child{text-align:right;word-break:break-word;}
+    .choice-card{padding:20px 16px;}
+    .stat{min-width:100px;padding:12px;}
+    .stat .n{font-size:18px;}
+    table{font-size:12px;}
+    th,td{padding:6px 6px;}
+    .card{padding:16px;}
+    .month-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:6px;}
+    .month-cell{font-size:11px;padding:6px 2px;}
+  }
+</style>
+</head>
+<body>
+<div id="root" class="app"></div>
+
+<script>
+const STORAGE_KEY = "ichhepuron_ledger_v1";
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const SEED_MEMBERS = [
+["Arka Chakraborty",30,0,0,0],["Arpita Chowdhury",30,1,1,1],["Atanu Dutta",100,1,1,1],
+["Biplab Sarkar",50,1,1,1],["Deb Sarkar",30,0,0,0],["Dishani Dhali",30,0,0,0],
+["Jayatri Sarkar",30,1,1,1],["Madhurima Mondal",30,1,1,1],["Mitali Biswas",50,1,1,1],
+["Nayan Maitra",30,0,0,0],["Niladri Sarkar",30,1,1,1],["Nilambar Sarkar",50,1,1,1],
+["Nirmal Baugh",50,1,1,1],["Nishanta Das",30,1,1,1],["Poulomi Bhowmick",30,0,0,0],
+["Pranati Paul",100,1,1,1],["Priti Roy",30,1,1,1],["Rahul Biswas",30,1,1,1],
+["Rana Das",30,1,1,1],["Ratul Biswas",30,0,0,0],["Rimi Debnath",30,1,1,1],
+["Saikat Roy",30,1,1,1],["Salma Khatun",30,1,1,1],["Sandip Sarkar",30,1,1,1],
+["Sarama Poddar",30,1,1,1],["Sayantan Singha Roy",30,1,1,1],["Rimi Dutta",30,0,0,1],
+["Shirsa Biswas",30,1,1,1],["Sima Nandi",50,1,1,1],["Soumita Majumder",50,1,1,1],
+["Sriparno Roy",30,0,0,0],["Subhajeet Das",100,0,0,0],["Sucheta Mallick",30,0,0,0],
+["Swagata Dutta",30,0,0,0],["Swarup Joadder",100,1,1,1],["Tanmay Das",50,1,1,1],
+["Titli Das",30,1,1,1],["Tuhin Dhali",30,1,1,1],["Uttam Kumar Sarkar",100,1,1,1],
+["Pratik Kotal",30,1,1,1],["Keya Mondal",50,1,1,1],["Diganta Moulik",30,1,1,1],
+["Aloy Singha Roy",30,1,1,1],["Sinchan Karmakar",30,1,1,1],["Sruti Mishra",30,0,0,0],
+["Roni Dey",30,1,1,1],["Anshuman Sarkar",30,1,1,1],["Shreya Das",30,1,1,1],
+["Sandeep Mandal",30,1,1,1],["Swadesh Biswas",100,1,1,1],["Dip Roy",30,1,1,1],
+["Supriya Sarkar",30,1,1,1],["Anindya Sarkar",30,1,1,1],["Jayashri Bar",30,0,0,0],
+["Santosh Mondal",50,1,1,1],["Santu Dhali",50,1,1,1],["Barnali Biswas",200,1,1,1],
+["Subhra Pratim Mondal",50,1,1,1],["Sanjay Biswas",50,1,1,1],["Babul Majumdar",50,1,1,1],
+["Archita Sarkar",50,0,0,1],["Rumpa Sarkar",50,1,1,1],["Shayan Mistri",50,0,0,0],
+["Anisha Dhali",50,1,1,1],["Anuska Mondal",50,1,1,1],["Prakash Sarkar",50,1,1,1],
+["Tanujoy Mallick",50,1,1,1],["Ritesh Mallick",30,1,1,1],["Rahul Roy",50,1,1,1],
+["Mouli Pal",50,1,1,1],["Sangeeta Samaddar",100,1,1,1],["Bibekananda Biswas",50,1,1,1],
+["Somnath Sarkar",100,1,1,1],["Soumik Sarkar",50,1,1,1],["Biprendu Roy",50,1,1,1],
+["Sudipta Sarkar",30,1,1,1],["Amrita Sarkar",50,1,1,1],["Subhasish Sarkar",50,1,1,1],
+["Soumen Debnath",200,1,1,1],["Abir Shankhari",500,0,0,0]
+];
+
+function buildSeed(){
+  const members = SEED_MEMBERS.map((m,i)=>{
+    const payments = {};
+    const flags = [m[2],m[3],m[4]];
+    ["2026-01","2026-02","2026-03"].forEach((k,idx)=>{ payments[k] = !!flags[idx]; });
+    return { id: "m"+(i+1), name: m[0], fee: m[1], payments, joined: "2026-01" };
+  });
+  return { members, donations: [], config: { razorpayKeyId: "", adminPass: "ichhepuron2026" }, updatedAt: Date.now() };
+}
+
+function monthKeysFrom(startYM, endYM){
+  const out = [];
+  let [sy,sm] = startYM.split("-").map(Number);
+  const [ey,em] = endYM.split("-").map(Number);
+  while(sy < ey || (sy===ey && sm<=em)){
+    out.push(sy+"-"+String(sm).padStart(2,"0"));
+    sm++; if(sm>12){sm=1; sy++;}
+  }
+  return out;
+}
+function currentYM(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
+function ymLabel(ym){
+  const [y,m] = ym.split("-").map(Number);
+  return MONTH_NAMES[m-1]+" "+y;
+}
+function fmtINR(n){
+  return "\u20B9"+Number(n).toLocaleString("en-IN");
+}
+
+// ---- Supabase setup ----
+// 1. Create a free project at https://supabase.com
+// 2. Run the SQL from the setup guide to create the kv_store table
+// 3. Paste your Project URL and anon public key below
+const SUPABASE_URL = "https://lbtunkhowosikodceikv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidHVua2hvd29zaWtvZGNlaWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzU2MDEsImV4cCI6MjEwMjkxMTYwMX0.GFUrMC__hY2Bop56QK1LhC70HwjHyKQJ78cfNv-T0eI";
+const supabaseClient = (SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+let DB = null;
+
+async function loadDB(){
+  if(!supabaseClient){
+    root.innerHTML = `<div class="card"><h3 style="font-size:16px;margin-bottom:8px;">Setup needed</h3><p class="muted">This app needs to be connected to a database before it can be used. Open the file, find SUPABASE_URL and SUPABASE_ANON_KEY near the top of the script, and paste in your Supabase project details.</p></div>`;
+    throw new Error("Supabase not configured");
+  }
+  try{
+    const { data, error } = await supabaseClient.from('kv_store').select('value').eq('key', STORAGE_KEY).maybeSingle();
+    if(error) throw error;
+    if(data && data.value){ DB = data.value; }
+    else { DB = buildSeed(); await saveDB(); }
+  }catch(e){
+    DB = buildSeed();
+    await saveDB();
+  }
+  if(!DB.donations) DB.donations = [];
+}
+function receiptNo(){
+  return "ICH-" + Date.now().toString(36).toUpperCase();
+}
+async function saveDB(){
+  DB.updatedAt = Date.now();
+  const { error } = await supabaseClient.from('kv_store').upsert({ key: STORAGE_KEY, value: DB });
+  if(error){ console.error("Save failed:", error); }
+}
+
+function dueMonthsFor(member){
+  const start = member.joined || "2026-01";
+  const all = monthKeysFrom(start, currentYM());
+  return all.filter(ym => !member.payments[ym]);
+}
+function paidMonthsFor(member){
+  const start = member.joined || "2026-01";
+  const all = monthKeysFrom(start, currentYM());
+  return all.filter(ym => !!member.payments[ym]);
+}
+
+let state = { view: "home", memberId: null, adminAuthed: false, query: "", toast: null, selectedMonths: {}, receipt: null };
+const root = document.getElementById("root");
+
+function setState(patch){ state = Object.assign({}, state, patch); render(); }
+
+function enterMember(memberId){
+  const m = DB.members.find(x=>x.id===memberId);
+  const sel = {};
+  if(m){ dueMonthsFor(m).forEach(ym => { sel[ym] = true; }); }
+  setState({ view:'memberView', memberId, query:'', selectedMonths: sel });
+}
+window.enterMember = enterMember;
+
+function alponaDivider(){
+  return `<svg class="alpona" viewBox="0 0 600 14" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="0" y1="7" x2="600" y2="7" stroke="#DCD3BF" stroke-width="1"/>
+    ${Array.from({length:30}).map((_,i)=>`<circle cx="${10+i*20}" cy="7" r="2.4" fill="${i%3===0?'#E8A33D':'#B5654A'}"/>`).join("")}
+  </svg>`;
+}
+
+function renderHome(){
+  return `
+    <div class="brand">
+      <h1>Ichhepuron</h1>
+    </div>
+    <div class="tag">Monthly member dues</div>
+    ${alponaDivider()}
+    <p class="muted" style="max-width:520px;">A shared ledger for the group's monthly contribution. Members can check where they stand and pay online; the treasurer keeps everything up to date in one place.</p>
+    <div class="home-choice">
+      <div class="choice-card" onclick="setState({view:'memberPick'})">
+        <h3>I'm a member</h3>
+        <p>Find your name to see your paid and due months, and pay online if anything is pending.</p>
+      </div>
+      <div class="choice-card" onclick="setState({view:'donate', donateDone:false})">
+        <h3>Make a donation</h3>
+        <p>Give any amount, for any purpose, separate from monthly dues. Get a receipt instantly.</p>
+      </div>
+      <div class="choice-card" onclick="setState({view:'adminGate'})">
+        <h3>Treasurer</h3>
+        <p>Sign in to update payments, add members, review donations, and manage the Razorpay setup.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderMemberPick(){
+  const q = state.query.toLowerCase();
+  const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : [];
+  return `
+    <a class="back" onclick="setState({view:'home',query:''})">&larr; Back</a>
+    <h2 style="margin-top:14px;font-size:22px;">Find your name</h2>
+    <div class="search-wrap" style="max-width:380px;margin-top:12px;">
+      <input id="memberSearch" placeholder="Start typing your name" value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})" autocomplete="off"/>
+      ${matches.length ? `<div class="dropdown">${matches.map(m=>`<div onclick="enterMember('${m.id}')">${m.name}</div>`).join("")}</div>` : ""}
+    </div>
+    ${q && matches.length===0 ? `<p class="muted" style="margin-top:10px;">No match. Check the spelling, or ask the treasurer to add you.</p>` : ""}
+  `;
+}
+
+function renderMemberView(){
+  const member = DB.members.find(m=>m.id===state.memberId);
+  if(!member) return renderMemberPick();
+  const due = dueMonthsFor(member);
+  const paid = paidMonthsFor(member);
+  const allMonths = monthKeysFrom(member.joined||"2026-01", currentYM());
+  const totalDue = due.length * member.fee;
+  const isClear = due.length === 0;
+  const sel = state.selectedMonths || {};
+  const selectedCount = due.filter(ym => sel[ym]).length;
+  const selectedTotal = selectedCount * member.fee;
+  return `
+    <a class="back" onclick="setState({view:'memberPick',memberId:null})">&larr; Back</a>
+    <div class="topbar" style="margin-top:14px;">
+      <h2 style="font-size:24px;">${member.name}</h2>
+      <span class="badge ${isClear?'clear':'due'}">${isClear? 'All clear' : due.length+' month'+(due.length>1?'s':'')+' due'}</span>
+    </div>
+    <p class="muted">Monthly fee: <span class="num">${fmtINR(member.fee)}</span></p>
+    <div class="stats-row">
+      <div class="stat"><div class="n">${paid.length}</div><div class="l">Months paid</div></div>
+      <div class="stat"><div class="n">${due.length}</div><div class="l">Months due</div></div>
+      <div class="stat"><div class="n">${fmtINR(totalDue)}</div><div class="l">Total due</div></div>
+    </div>
+    <div class="month-grid">
+      ${allMonths.map(ym=>{
+        const p = !!member.payments[ym];
+        if(p) return `<div class="month-cell paid"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
+        const isSel = !!sel[ym];
+        return `<div class="month-cell due selectable ${isSel?'selected':''}" onclick="toggleMonthSelect('${ym}')"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
+      }).join("")}
+    </div>
+    ${!isClear ? `
+      <div class="card" style="margin-top:20px;">
+        <h3 style="font-size:16px;margin-bottom:6px;">Pay now</h3>
+        <p class="muted" style="margin-bottom:14px;">Click months above to choose which to pay — ${selectedCount} selected, ${fmtINR(selectedTotal)} total. All due months are pre-selected; unclick any you'd rather pay separately.</p>
+        <button class="primary" ${selectedCount===0?'disabled':''} onclick="startPayment('${member.id}')">Pay ${fmtINR(selectedTotal)}${selectedCount?` for ${selectedCount} month${selectedCount>1?'s':''}`:''}</button>
+        <div id="payErr" class="err"></div>
+      </div>
+    ` : `<p class="muted" style="margin-top:18px;">Nothing pending. Thank you.</p>`}
+  `;
+}
+
+function renderDonate(){
+  return `
+    <a class="back" onclick="setState({view:'home'})">&larr; Back</a>
+    <h2 style="margin-top:14px;font-size:22px;">Make a donation</h2>
+    <p class="muted" style="margin-bottom:16px;max-width:460px;">This is separate from monthly dues — any amount, for any purpose. You'll get a receipt right after paying.</p>
+    <div class="card" style="max-width:420px;">
+      <div class="field">
+        <label class="lbl">Your name</label>
+        <input id="donName" placeholder="Full name"/>
+      </div>
+      <div class="field">
+        <label class="lbl">Email (for your receipt)</label>
+        <input id="donEmail" type="email" placeholder="name@example.com"/>
+      </div>
+      <div class="field">
+        <label class="lbl">Amount (\u20B9)</label>
+        <input id="donAmount" type="number" min="1" placeholder="500"/>
+      </div>
+      <div class="field">
+        <label class="lbl">Purpose</label>
+        <select id="donPurpose">
+          <option value="General fund">General fund</option>
+          <option value="Puja and festival">Puja and festival</option>
+          <option value="Relief work">Relief work</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <button class="primary" onclick="startDonationPayment()">Donate</button>
+      <div id="donErr" class="err"></div>
+    </div>
+  `;
+}
+
+function renderReceipt(){
+  const r = state.receipt;
+  if(!r) return renderHome();
+  return `
+    <div class="receipt">
+      <div class="rh">
+        <h2>Ichhepuron</h2>
+        <p>${r.type === 'donation' ? 'Donation receipt' : 'Payment receipt'}</p>
+        <svg width="120" height="10" viewBox="0 0 120 10" style="margin-top:10px;" xmlns="http://www.w3.org/2000/svg">
+          ${Array.from({length:9}).map((_,i)=>`<circle cx="${8+i*13}" cy="5" r="2" fill="${i%3===0?'#E8A33D':'#B5654A'}"/>`).join("")}
+        </svg>
+      </div>
+      <div class="rrow"><span class="k">Receipt no.</span><span>${r.id}</span></div>
+      <div class="rrow"><span class="k">Date</span><span>${r.date}</span></div>
+      <div class="rrow"><span class="k">Name</span><span>${r.name}</span></div>
+      ${r.email ? `<div class="rrow"><span class="k">Email</span><span>${r.email}</span></div>` : ""}
+      ${r.purpose ? `<div class="rrow"><span class="k">Purpose</span><span>${r.purpose}</span></div>` : ""}
+      ${r.months ? `<div class="rrow"><span class="k">Months covered</span><span>${r.months}</span></div>` : ""}
+      <div class="ramt"><div class="n">${fmtINR(r.amount)}</div></div>
+      <div class="rfoot">Thank you for your contribution to Ichhepuron.</div>
+    </div>
+    <div class="row no-print" style="justify-content:center;margin-top:20px;">
+      <button class="ghost" onclick="window.print()">Print / Save as PDF</button>
+      <button class="primary" onclick="setState({view:'home', receipt:null})">Done</button>
+    </div>
+  `;
+}
+
+function renderAdminDonations(){
+  const total = DB.donations.reduce((s,d)=>s+d.amount,0);
+  return `
+    <div class="topbar">
+      <h2 style="font-size:22px;">Donations</h2>
+      <button class="ghost small" onclick="setState({view:'admin'})">&larr; Back to members</button>
+    </div>
+    <div class="stats-row" style="margin-top:14px;">
+      <div class="stat"><div class="n">${DB.donations.length}</div><div class="l">Donations received</div></div>
+      <div class="stat"><div class="n">${fmtINR(total)}</div><div class="l">Total raised</div></div>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Purpose</th><th>Amount</th></tr></thead>
+        <tbody>
+        ${DB.donations.length===0 ? `<tr><td colspan="5" class="muted" style="padding:16px;">No donations yet.</td></tr>` :
+          DB.donations.slice().reverse().map(d=>`
+            <tr>
+              <td>${d.date}</td><td>${d.name}</td><td>${d.email||'—'}</td><td>${d.purpose}</td>
+              <td class="num">${fmtINR(d.amount)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdminGate(){
+  return `
+    <a class="back" onclick="setState({view:'home'})">&larr; Back</a>
+    <h2 style="margin-top:14px;font-size:22px;">Treasurer sign-in</h2>
+    <div class="field" style="max-width:320px;margin-top:14px;">
+      <label class="lbl">Passcode</label>
+      <input id="adminPassInput" type="password" placeholder="Enter passcode" />
+    </div>
+    <button class="primary" onclick="tryAdminLogin()">Sign in</button>
+    <div id="adminErr" class="err"></div>
+    <p class="muted" style="margin-top:16px;font-size:12px;">Default passcode is <span class="num">ichhepuron2026</span> — change it in settings after signing in.</p>
+  `;
+}
+
+function renderAdmin(){
+  const totalMembers = DB.members.length;
+  const dueCount = DB.members.filter(m=>dueMonthsFor(m).length>0).length;
+  const totalOutstanding = DB.members.reduce((s,m)=>s+dueMonthsFor(m).length*m.fee,0);
+  const q = state.query.toLowerCase();
+  const rows = DB.members.filter(m=>m.name.toLowerCase().includes(q));
+  const cm = currentYM();
+  const monthsToShow = monthKeysFrom("2026-01", cm);
+  return `
+    <div class="topbar">
+      <h2 style="font-size:22px;">Treasurer dashboard</h2>
+      <div class="row">
+        <button class="ghost small" onclick="setState({view:'adminDonations'})">Donations</button>
+        <button class="ghost small" onclick="setState({view:'adminSettings'})">Settings</button>
+      </div>
+    </div>
+    <div class="stats-row" style="margin-top:14px;">
+      <div class="stat"><div class="n">${totalMembers}</div><div class="l">Members</div></div>
+      <div class="stat"><div class="n">${dueCount}</div><div class="l">With dues</div></div>
+      <div class="stat"><div class="n">${fmtINR(totalOutstanding)}</div><div class="l">Outstanding</div></div>
+    </div>
+    <div class="row" style="margin-bottom:14px;justify-content:space-between;">
+      <input style="max-width:260px;" placeholder="Search member" value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})"/>
+      <button class="primary small" onclick="setState({view:'adminAddMember'})">+ Add member</button>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Fee</th>
+          ${monthsToShow.map(ym=>`<th>${ymLabel(ym).split(" ")[0]}</th>`).join("")}
+          <th>Due</th>
+        </tr></thead>
+        <tbody>
+        ${rows.map(m=>`
+          <tr>
+            <td>${m.name}</td>
+            <td class="num">${fmtINR(m.fee)}</td>
+            ${monthsToShow.map(ym=>{
+              const p = !!m.payments[ym];
+              return `<td><span class="month-cell clickable ${p?'paid':'due'}" style="padding:4px 8px;display:inline-block;min-width:34px;text-align:center;" onclick="toggleMonth('${m.id}','${ym}')">${p?'\u2713':'\u2013'}</span></td>`;
+            }).join("")}
+            <td class="num">${dueMonthsFor(m).length}</td>
+          </tr>
+        `).join("")}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:10px;font-size:12px;">Click a month cell to toggle paid/due for that member.</p>
+  `;
+}
+
+function renderAdminAddMember(){
+  return `
+    <a class="back" onclick="setState({view:'admin'})">&larr; Back to dashboard</a>
+    <h2 style="margin-top:14px;font-size:20px;">Add a member</h2>
+    <div class="field" style="max-width:340px;margin-top:14px;">
+      <label class="lbl">Full name</label>
+      <input id="newName" placeholder="e.g. Ritwik Ghosh"/>
+    </div>
+    <div class="field" style="max-width:340px;">
+      <label class="lbl">Monthly fee (\u20B9)</label>
+      <input id="newFee" type="number" placeholder="30"/>
+    </div>
+    <button class="primary" onclick="addMember()">Add member</button>
+    <div id="addErr" class="err"></div>
+  `;
+}
+
+function renderAdminSettings(){
+  const cfg = DB.config;
+  return `
+    <a class="back" onclick="setState({view:'admin'})">&larr; Back to dashboard</a>
+    <h2 style="margin-top:14px;font-size:20px;">Settings</h2>
+    <div class="card" style="margin-top:14px;">
+      <h3 style="font-size:15px;margin-bottom:10px;">Razorpay</h3>
+      <p class="muted" style="margin-bottom:12px;">Paste your Razorpay <strong>Key ID</strong> (starts with rzp_) from your Razorpay dashboard &rarr; Settings &rarr; API Keys. This is the public key only, safe to store here.</p>
+      <div class="field">
+        <label class="lbl">Key ID</label>
+        <input id="keyIdInput" placeholder="rzp_live_xxxxxxxxxxxx" value="${(cfg.razorpayKeyId||'').replace(/"/g,'&quot;')}"/>
+      </div>
+      <button class="primary small" onclick="saveKeyId()">Save key</button>
+      <div id="keyErr" class="err"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:10px;">Change passcode</h3>
+      <div class="field">
+        <label class="lbl">New passcode</label>
+        <input id="newPassInput" type="password" placeholder="New passcode"/>
+      </div>
+      <button class="primary small" onclick="changePasscode()">Update passcode</button>
+      <div id="passErr" class="err"></div>
+    </div>
+  `;
+}
+
+window.setState = setState;
+
+window.tryAdminLogin = function(){
+  const val = document.getElementById("adminPassInput").value;
+  if(val === DB.config.adminPass){
+    setState({view:"admin", adminAuthed:true, query:""});
+  } else {
+    document.getElementById("adminErr").textContent = "Wrong passcode. Try again.";
+  }
+};
+
+window.toggleMonth = async function(memberId, ym){
+  const m = DB.members.find(x=>x.id===memberId);
+  if(!m) return;
+  m.payments[ym] = !m.payments[ym];
+  await saveDB();
+  render();
+};
+
+window.addMember = async function(){
+  const name = document.getElementById("newName").value.trim();
+  const fee = Number(document.getElementById("newFee").value);
+  const err = document.getElementById("addErr");
+  if(!name){ err.textContent = "Enter a name first."; return; }
+  if(!fee || fee <= 0){ err.textContent = "Enter a valid monthly fee."; return; }
+  const id = "m"+(DB.members.length+1)+"_"+Date.now();
+  DB.members.push({ id, name, fee, payments:{}, joined: currentYM() });
+  await saveDB();
+  setState({view:"admin", query:""});
+};
+
+window.saveKeyId = async function(){
+  const val = document.getElementById("keyIdInput").value.trim();
+  const err = document.getElementById("keyErr");
+  if(val && !val.startsWith("rzp_")){ err.textContent = "Key ID should start with rzp_"; return; }
+  DB.config.razorpayKeyId = val;
+  await saveDB();
+  err.style.color = "var(--leaf)";
+  err.textContent = "Saved.";
+};
+
+window.changePasscode = async function(){
+  const val = document.getElementById("newPassInput").value;
+  const err = document.getElementById("passErr");
+  if(!val || val.length < 4){ err.textContent = "Use at least 4 characters."; return; }
+  DB.config.adminPass = val;
+  await saveDB();
+  err.style.color = "var(--leaf)";
+  err.textContent = "Passcode updated.";
+};
+
+window.toggleMonthSelect = function(ym){
+  const sel = Object.assign({}, state.selectedMonths);
+  sel[ym] = !sel[ym];
+  setState({ selectedMonths: sel });
+};
+
+window.startPayment = function(memberId){
+  const m = DB.members.find(x=>x.id===memberId);
+  const errEl = document.getElementById("payErr");
+  errEl.textContent = "";
+  const keyId = DB.config.razorpayKeyId;
+  if(!keyId){
+    errEl.textContent = "Online payment isn't set up yet. Please ask the treasurer, or pay them directly.";
+    return;
+  }
+  const due = dueMonthsFor(m);
+  const chosen = due.filter(ym => state.selectedMonths && state.selectedMonths[ym]);
+  const amount = chosen.length * m.fee;
+  if(amount <= 0){ errEl.textContent = "Select at least one month to pay."; return; }
+  const options = {
+    key: keyId,
+    amount: amount * 100,
+    currency: "INR",
+    name: "Ichhepuron",
+    description: chosen.length + " month(s) — " + m.name,
+    handler: async function(response){
+      chosen.forEach(ym => { m.payments[ym] = true; });
+      await saveDB();
+      const monthsLabel = chosen.map(ymLabel).join(", ");
+      setState({
+        view: "receipt",
+        receipt: {
+          type: "dues", id: response.razorpay_payment_id || receiptNo(),
+          date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' }),
+          name: m.name, amount, months: monthsLabel
+        }
+      });
+    },
+    theme: { color: "#B5654A" },
+    modal: { ondismiss: function(){ } }
+  };
+  try{
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(resp){
+      errEl.textContent = "Payment didn't go through. Please try again.";
+    });
+    rzp.open();
+  }catch(e){
+    errEl.textContent = "Couldn't open payment window. Check the Razorpay key in settings.";
+  }
+};
+
+window.startDonationPayment = function(){
+  const errEl = document.getElementById("donErr");
+  errEl.textContent = "";
+  const name = document.getElementById("donName").value.trim();
+  const email = document.getElementById("donEmail").value.trim();
+  const amount = Number(document.getElementById("donAmount").value);
+  const purpose = document.getElementById("donPurpose").value;
+  if(!name){ errEl.textContent = "Enter your name."; return; }
+  if(email && !/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent = "That email doesn't look right."; return; }
+  if(!amount || amount <= 0){ errEl.textContent = "Enter a donation amount."; return; }
+  const keyId = DB.config.razorpayKeyId;
+  if(!keyId){ errEl.textContent = "Online payment isn't set up yet. Please ask the treasurer."; return; }
+  const options = {
+    key: keyId,
+    amount: Math.round(amount * 100),
+    currency: "INR",
+    name: "Ichhepuron",
+    description: "Donation — " + purpose,
+    prefill: { name, email },
+    handler: async function(response){
+      const donation = {
+        id: response.razorpay_payment_id || receiptNo(),
+        name, email, amount, purpose,
+        date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' })
+      };
+      DB.donations.push(donation);
+      await saveDB();
+      setState({
+        view: "receipt",
+        receipt: { type: "donation", id: donation.id, date: donation.date, name, email, amount, purpose }
+      });
+    },
+    theme: { color: "#B5654A" },
+    modal: { ondismiss: function(){ } }
+  };
+  try{
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(resp){
+      errEl.textContent = "Payment didn't go through. Please try again.";
+    });
+    rzp.open();
+  }catch(e){
+    errEl.textContent = "Couldn't open payment window. Check the Razorpay key in settings.";
+  }
+};
+
+function render(){
+  let html = "";
+  if(state.toast){
+    html += `<div class="toast">${state.toast}</div>`;
+  }
+  switch(state.view){
+    case "home": html += renderHome(); break;
+    case "memberPick": html += renderMemberPick(); break;
+    case "memberView": html += renderMemberView(); break;
+    case "adminGate": html += renderAdminGate(); break;
+    case "admin":
+      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+      html += renderAdmin(); break;
+    case "adminAddMember":
+      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+      html += renderAdminAddMember(); break;
+    case "adminSettings":
+      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+      html += renderAdminSettings(); break;
+    case "adminDonations":
+      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+      html += renderAdminDonations(); break;
+    case "donate": html += renderDonate(); break;
+    case "receipt": html += renderReceipt(); break;
+    default: html += renderHome();
+  }
+  root.innerHTML = html;
+  const searchInput = document.getElementById("memberSearch");
+  if(searchInput){
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+  }
+  if(state.toast){
+    setTimeout(()=>{ if(state.toast){ state = Object.assign({}, state, {toast:null}); } }, 4000);
+  }
+}
+
+async function init(){
+  root.innerHTML = `<p class="muted" style="padding:40px 0;">Loading ledger…</p>`;
+  try{
+    await loadDB();
+    render();
+  }catch(e){
+    // setup message already shown by loadDB
+  }
+}
+init();
+</script>
+</body>
+</html>
