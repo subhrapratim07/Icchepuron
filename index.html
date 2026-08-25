@@ -28,7 +28,14 @@
     <link rel="stylesheet" href="css/icomoon.css">
     <link rel="stylesheet" href="css/style.css">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/emailjs-com@2.3.2/dist/email.min.js"></script>
-
+<!-- Add this to fix mobile scrolling on carousels -->
+    <style>
+      .owl-carousel,
+      .owl-carousel .owl-stage-outer,
+      .owl-carousel .owl-stage {
+          touch-action: pan-y !important;
+      }
+    </style>
 
   </head>
   <body>
