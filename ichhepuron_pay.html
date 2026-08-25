@@ -1,759 +1,1108 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ichhepuron — Monthly Dues</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<style>
-  :root{
-    --paper:#F7F3EA;
-    --ink:#1E2A4A;
-    --ink-soft:#4A5578;
-    --marigold:#E8A33D;
-    --marigold-dark:#B97A1F;
-    --terracotta:#B5654A;
-    --sindoor:#B23A48;
-    --sindoor-bg:#F6E2E0;
-    --leaf:#3F7554;
-    --leaf-bg:#E1EEE3;
-    --line:#DCD3BF;
-    --card:#FFFFFF;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Work Sans',sans-serif;}
-  .app{max-width:920px;margin:0 auto;padding:28px 20px 60px;}
-  h1,h2,h3{font-family:'Tiro Bangla',serif;font-weight:400;margin:0;}
-  .brand{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
-  .brand h1{font-size:30px;color:var(--ink);}
-  .brand .tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--terracotta);font-weight:600;}
-  .alpona{height:14px;width:100%;margin:18px 0 26px;opacity:.8;}
-  .row{display:flex;gap:10px;flex-wrap:wrap;}
-  @media(max-width:480px){ .row{flex-direction:column;align-items:stretch;} .row button{width:100%;} }
-  button.primary,button.ghost{
-    font-family:'Work Sans',sans-serif;font-size:14px;font-weight:500;
-    border-radius:10px;padding:10px 18px;cursor:pointer;border:1.5px solid var(--ink);
-  }
-  button.primary{background:var(--ink);color:var(--paper);}
-  button.primary:hover{background:#141d38;}
-  button.ghost{background:transparent;color:var(--ink);}
-  button.ghost:hover{background:rgba(30,42,74,.06);}
-  button.small{font-size:12px;padding:6px 12px;border-radius:8px;}
-  button:disabled{opacity:.45;cursor:not-allowed;}
-  input,select{
-    font-family:'Work Sans',sans-serif;font-size:14px;padding:9px 12px;
-    border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);width:100%;
-  }
-  input:focus,select:focus{outline:none;border-color:var(--marigold-dark);}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
-  .home-choice{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:24px;}
-  .choice-card{
-    background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:26px 22px;
-    cursor:pointer;transition:border-color .15s;
-  }
-  .choice-card:hover{border-color:var(--marigold-dark);}
-  .choice-card h3{font-size:20px;margin-bottom:6px;}
-  .choice-card p{font-size:13px;color:var(--ink-soft);margin:0;line-height:1.5;}
-  .badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.03em;padding:3px 10px;border-radius:20px;}
-  .badge.due{background:var(--sindoor-bg);color:var(--sindoor);}
-  .badge.clear{background:var(--leaf-bg);color:var(--leaf);}
-  .month-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:16px 0;}
-  .month-cell{
-    border:1.5px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:12px;
-    background:#fff;cursor:default;user-select:none;
-  }
-  .month-cell.paid{background:var(--leaf-bg);border-color:var(--leaf);color:#1E4A2E;}
-  .month-cell.due{background:var(--sindoor-bg);border-color:var(--sindoor);color:#6E1F28;}
-  .month-cell .m{display:block;font-weight:600;margin-bottom:2px;}
-  .month-cell.clickable{cursor:pointer;}
-  .month-cell.clickable:hover{filter:brightness(.96);}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;}
-  th{font-weight:600;color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
-  tr:hover td{background:rgba(232,163,61,.06);}
-  .num{font-family:'JetBrains Mono',monospace;}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-  .muted{color:var(--ink-soft);font-size:13px;}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;flex:1;min-width:120px;}
-  .stat .n{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;}
-  .stat .l{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
-  .stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
-  .err{color:var(--sindoor);font-size:12.5px;margin-top:6px;}
-  .toast{
-    position:sticky;top:12px;z-index:10;background:var(--leaf-bg);color:#1E4A2E;
-    border:1px solid var(--leaf);border-radius:10px;padding:10px 16px;font-size:13px;margin-bottom:14px;
-  }
-  .search-wrap{position:relative;}
-  .dropdown{
-    position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--line);
-    border-radius:10px;margin-top:4px;max-height:220px;overflow-y:auto;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06);
-  }
-  .dropdown div{padding:9px 12px;font-size:13.5px;cursor:pointer;}
-  .dropdown div:hover{background:var(--paper);}
-  a.back{font-size:13px;color:var(--ink-soft);text-decoration:none;cursor:pointer;}
-  a.back:hover{text-decoration:underline;}
-  label.lbl{font-size:12px;color:var(--ink-soft);display:block;margin-bottom:4px;}
-  .field{margin-bottom:12px;}
-  .month-cell.selectable{cursor:pointer;}
-  .month-cell.selectable:hover{filter:brightness(.97);}
-  .month-cell.selected{outline:2.5px solid var(--marigold-dark);outline-offset:1px;}
-  .tabs{display:flex;gap:8px;margin-bottom:16px;}
-  .tab{
-    font-size:13px;font-weight:500;padding:8px 14px;border-radius:9px;cursor:pointer;
-    border:1.5px solid var(--line);background:#fff;color:var(--ink-soft);
-  }
-  .tab.active{border-color:var(--ink);color:var(--ink);background:var(--paper);}
-  .receipt{
-    background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:32px;max-width:460px;margin:0 auto;
-  }
-  .receipt .rh{text-align:center;margin-bottom:18px;padding-bottom:16px;border-bottom:1px dashed var(--line);}
-  .receipt .rh h2{font-size:22px;}
-  .receipt .rh p{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--terracotta);margin-top:4px;}
-  .receipt .rrow{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;}
-  .receipt .rrow .k{color:var(--ink-soft);}
-  .receipt .ramt{text-align:center;margin:18px 0;}
-  .receipt .ramt .n{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:500;}
-  .receipt .rfoot{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line);text-align:center;font-size:11.5px;color:var(--ink-soft);}
-  @media print{
-    body *{visibility:hidden;}
-    .receipt, .receipt *{visibility:visible;}
-    .receipt{position:absolute;top:0;left:0;right:0;margin:0 auto;border:none;}
-    .no-print{display:none !important;}
-  }
-  @media(max-width:480px){
-    .app{padding:18px 14px 48px;}
-    .brand h1{font-size:26px;}
-    .receipt{padding:22px 16px;max-width:100%;}
-    .receipt .rh h2{font-size:19px;}
-    .receipt .ramt .n{font-size:26px;}
-    .receipt .rrow{flex-wrap:wrap;gap:2px;}
-    .receipt .rrow span:last-child{text-align:right;word-break:break-word;}
-    .choice-card{padding:20px 16px;}
-    .stat{min-width:100px;padding:12px;}
-    .stat .n{font-size:18px;}
-    table{font-size:12px;}
-    th,td{padding:6px 6px;}
-    .card{padding:16px;}
-    .month-grid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:6px;}
-    .month-cell{font-size:11px;padding:6px 2px;}
-  }
-</style>
-</head>
-<body>
-<div id="root" class="app"></div>
+  <head>
+    <title>Icchepuron - Payment Portal</title>
+    <link rel="icon" href="./logo.png" type="image/png">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Theme Fonts & CSS from Main File -->
+    <link href="https://fonts.googleapis.com/css?family=Dosis:200,300,400,500,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Overpass:300,400,400i,600,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-<script>
-const STORAGE_KEY = "ichhepuron_ledger_v1";
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
+    <link rel="stylesheet" href="css/animate.css">
+    <link rel="stylesheet" href="css/owl.carousel.min.css">
+    <link rel="stylesheet" href="css/owl.theme.default.min.css">
+    <link rel="stylesheet" href="css/magnific-popup.css">
+    <link rel="stylesheet" href="css/aos.css">
+    <link rel="stylesheet" href="css/ionicons.min.css">
+    <link rel="stylesheet" href="css/bootstrap-datepicker.css">
+    <link rel="stylesheet" href="css/jquery.timepicker.css">
+    <link rel="stylesheet" href="css/flaticon.css">
+    <link rel="stylesheet" href="css/icomoon.css">
+    <link rel="stylesheet" href="css/style.css">
 
-const SEED_MEMBERS = [
-["Arka Chakraborty",30,0,0,0],["Arpita Chowdhury",30,1,1,1],["Atanu Dutta",100,1,1,1],
-["Biplab Sarkar",50,1,1,1],["Deb Sarkar",30,0,0,0],["Dishani Dhali",30,0,0,0],
-["Jayatri Sarkar",30,1,1,1],["Madhurima Mondal",30,1,1,1],["Mitali Biswas",50,1,1,1],
-["Nayan Maitra",30,0,0,0],["Niladri Sarkar",30,1,1,1],["Nilambar Sarkar",50,1,1,1],
-["Nirmal Baugh",50,1,1,1],["Nishanta Das",30,1,1,1],["Poulomi Bhowmick",30,0,0,0],
-["Pranati Paul",100,1,1,1],["Priti Roy",30,1,1,1],["Rahul Biswas",30,1,1,1],
-["Rana Das",30,1,1,1],["Ratul Biswas",30,0,0,0],["Rimi Debnath",30,1,1,1],
-["Saikat Roy",30,1,1,1],["Salma Khatun",30,1,1,1],["Sandip Sarkar",30,1,1,1],
-["Sarama Poddar",30,1,1,1],["Sayantan Singha Roy",30,1,1,1],["Rimi Dutta",30,0,0,1],
-["Shirsa Biswas",30,1,1,1],["Sima Nandi",50,1,1,1],["Soumita Majumder",50,1,1,1],
-["Sriparno Roy",30,0,0,0],["Subhajeet Das",100,0,0,0],["Sucheta Mallick",30,0,0,0],
-["Swagata Dutta",30,0,0,0],["Swarup Joadder",100,1,1,1],["Tanmay Das",50,1,1,1],
-["Titli Das",30,1,1,1],["Tuhin Dhali",30,1,1,1],["Uttam Kumar Sarkar",100,1,1,1],
-["Pratik Kotal",30,1,1,1],["Keya Mondal",50,1,1,1],["Diganta Moulik",30,1,1,1],
-["Aloy Singha Roy",30,1,1,1],["Sinchan Karmakar",30,1,1,1],["Sruti Mishra",30,0,0,0],
-["Roni Dey",30,1,1,1],["Anshuman Sarkar",30,1,1,1],["Shreya Das",30,1,1,1],
-["Sandeep Mandal",30,1,1,1],["Swadesh Biswas",100,1,1,1],["Dip Roy",30,1,1,1],
-["Supriya Sarkar",30,1,1,1],["Anindya Sarkar",30,1,1,1],["Jayashri Bar",30,0,0,0],
-["Santosh Mondal",50,1,1,1],["Santu Dhali",50,1,1,1],["Barnali Biswas",200,1,1,1],
-["Subhra Pratim Mondal",50,1,1,1],["Sanjay Biswas",50,1,1,1],["Babul Majumdar",50,1,1,1],
-["Archita Sarkar",50,0,0,1],["Rumpa Sarkar",50,1,1,1],["Shayan Mistri",50,0,0,0],
-["Anisha Dhali",50,1,1,1],["Anuska Mondal",50,1,1,1],["Prakash Sarkar",50,1,1,1],
-["Tanujoy Mallick",50,1,1,1],["Ritesh Mallick",30,1,1,1],["Rahul Roy",50,1,1,1],
-["Mouli Pal",50,1,1,1],["Sangeeta Samaddar",100,1,1,1],["Bibekananda Biswas",50,1,1,1],
-["Somnath Sarkar",100,1,1,1],["Soumik Sarkar",50,1,1,1],["Biprendu Roy",50,1,1,1],
-["Sudipta Sarkar",30,1,1,1],["Amrita Sarkar",50,1,1,1],["Subhasish Sarkar",50,1,1,1],
-["Soumen Debnath",200,1,1,1],["Abir Shankhari",500,0,0,0]
-];
+    <!-- Payment Portal Scripts -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-function buildSeed(){
-  const members = SEED_MEMBERS.map((m,i)=>{
-    const payments = {};
-    const flags = [m[2],m[3],m[4]];
-    ["2026-01","2026-02","2026-03"].forEach((k,idx)=>{ payments[k] = !!flags[idx]; });
-    return { id: "m"+(i+1), name: m[0], fee: m[1], payments, joined: "2026-01" };
-  });
-  return { members, donations: [], config: { razorpayKeyId: "", adminPass: "ichhepuron2026" }, updatedAt: Date.now() };
-}
+    <!-- Custom App Styles (Scoped for the Payment Dashboard) -->
+    <style>
+      :root {
+        --primary: #F96D00; /* Adjusted to match theme orange */
+        --primary-dark: #e05b1c;
+        --primary-light: #fa8f3d;
+        --amber: #faaa3a;
+        --dark: #1f2421;
+        --dark-card: #282e2a;
+        --paper: #ffffff;
+        --surface: #f4f6f5;
+        --text: #2c332e;
+        --text-muted: #6c757d;
+        --line: #e3e7e4;
+        --success: #2e7d32;
+        --success-bg: #e8f5e9;
+        --danger: #c62828;
+        --danger-bg: #ffebee;
+        --radius: 10px;
+      }
 
-function monthKeysFrom(startYM, endYM){
-  const out = [];
-  let [sy,sm] = startYM.split("-").map(Number);
-  const [ey,em] = endYM.split("-").map(Number);
-  while(sy < ey || (sy===ey && sm<=em)){
-    out.push(sy+"-"+String(sm).padStart(2,"0"));
-    sm++; if(sm>12){sm=1; sy++;}
-  }
-  return out;
-}
-function currentYM(){
-  const d = new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-}
-function ymLabel(ym){
-  const [y,m] = ym.split("-").map(Number);
-  return MONTH_NAMES[m-1]+" "+y;
-}
-function fmtINR(n){
-  return "\u20B9"+Number(n).toLocaleString("en-IN");
-}
+      /* Base Application Overrides */
+      .payment-app-wrapper {
+        font-family: 'Overpass', sans-serif;
+        color: var(--text);
+        width: 100%;
+        margin: 0 auto;
+        padding: 40px 0;
+      }
 
-// ---- Supabase setup ----
-// 1. Create a free project at https://supabase.com
-// 2. Run the SQL from the setup guide to create the kv_store table
-// 3. Paste your Project URL and anon public key below
-const SUPABASE_URL = "https://lbtunkhowosikodceikv.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidHVua2hvd29zaWtvZGNlaWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzU2MDEsImV4cCI6MjEwMjkxMTYwMX0.GFUrMC__hY2Bop56QK1LhC70HwjHyKQJ78cfNv-T0eI";
-const supabaseClient = (SUPABASE_URL.startsWith("http") && window.supabase)
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+      /* Ensure Dosis is used dynamically injected content */
+      .payment-app-wrapper h2, .payment-app-wrapper h3, .payment-app-wrapper h4 {
+        font-family: 'Dosis', sans-serif;
+        font-weight: 700;
+      }
 
-let DB = null;
+      /* --- NGO 3-BOX COUNTER / ACTION CARDS --- */
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 10px;
+      }
+      .action-card {
+        border-radius: var(--radius);
+        padding: 26px 22px;
+        color: #fff;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 200px;
+      }
+      .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+      }
+      .action-card.card-orange { background: linear-gradient(135deg, var(--primary) 0%, #fa7f36 100%); }
+      .action-card.card-amber { background: linear-gradient(135deg, var(--amber) 0%, #e69622 100%); }
+      .action-card.card-dark { background: linear-gradient(135deg, var(--dark) 0%, var(--dark-card) 100%); }
+      
+      .action-card h3 {
+        font-size: 22px;
+        margin-bottom: 8px;
+        color: #fff;
+      }
+      .action-card p {
+        font-size: 14px;
+        color: rgba(255,255,255,0.92);
+        line-height: 1.5;
+        margin-bottom: 18px;
+      }
+      .action-card .btn-tag {
+        align-self: flex-start;
+        background: rgba(255,255,255,0.95);
+        color: var(--dark);
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
 
-async function loadDB(){
-  if(!supabaseClient){
-    root.innerHTML = `<div class="card"><h3 style="font-size:16px;margin-bottom:8px;">Setup needed</h3><p class="muted">This app needs to be connected to a database before it can be used. Open the file, find SUPABASE_URL and SUPABASE_ANON_KEY near the top of the script, and paste in your Supabase project details.</p></div>`;
-    throw new Error("Supabase not configured");
-  }
-  try{
-    const { data, error } = await supabaseClient.from('kv_store').select('value').eq('key', STORAGE_KEY).maybeSingle();
-    if(error) throw error;
-    if(data && data.value){ DB = data.value; }
-    else { DB = buildSeed(); await saveDB(); }
-  }catch(e){
-    DB = buildSeed();
-    await saveDB();
-  }
-  if(!DB.donations) DB.donations = [];
-}
-function receiptNo(){
-  return "ICH-" + Date.now().toString(36).toUpperCase();
-}
-async function saveDB(){
-  DB.updatedAt = Date.now();
-  const { error } = await supabaseClient.from('kv_store').upsert({ key: STORAGE_KEY, value: DB });
-  if(error){ console.error("Save failed:", error); }
-}
+      /* --- FORM & DASHBOARD CARDS --- */
+      .card-app {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .stat {
+        background: #fafbfa;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+      .stat .n {
+        font-family: 'Dosis', sans-serif;
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--primary);
+      }
+      .stat .l {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
 
-function dueMonthsFor(member){
-  const start = member.joined || "2026-01";
-  const all = monthKeysFrom(start, currentYM());
-  return all.filter(ym => !member.payments[ym]);
-}
-function paidMonthsFor(member){
-  const start = member.joined || "2026-01";
-  const all = monthKeysFrom(start, currentYM());
-  return all.filter(ym => !!member.payments[ym]);
-}
+      /* Buttons & Inputs */
+      .payment-app-wrapper button.primary, .payment-app-wrapper button.ghost {
+        font-family: 'Overpass', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        border-radius: 6px;
+        padding: 10px 18px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .payment-app-wrapper button.primary {
+        background: var(--primary);
+        color: #fff;
+        border: 1px solid var(--primary);
+      }
+      .payment-app-wrapper button.primary:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+      }
+      .payment-app-wrapper button.ghost {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+      .payment-app-wrapper button.ghost:hover {
+        border-color: var(--text);
+      }
+      .payment-app-wrapper button.small {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+      .payment-app-wrapper button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-let state = { view: "home", memberId: null, adminAuthed: false, query: "", toast: null, selectedMonths: {}, receipt: null };
-const root = document.getElementById("root");
+      .payment-app-wrapper input, .payment-app-wrapper select {
+        font-family: 'Overpass', sans-serif;
+        font-size: 14px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        width: 100%;
+      }
+      .payment-app-wrapper input:focus, .payment-app-wrapper select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(248, 111, 45, 0.15);
+      }
+      .field { margin-bottom: 14px; }
+      label.lbl {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+        letter-spacing: 0.03em;
+      }
 
-function setState(patch){ state = Object.assign({}, state, patch); render(); }
+      /* Month Selector Matrix */
+      .month-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+        gap: 10px;
+        margin: 18px 0;
+      }
+      .month-cell {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 6px;
+        text-align: center;
+        font-size: 12.5px;
+        background: #fff;
+        font-weight: 600;
+        user-select: none;
+      }
+      .month-cell.paid { background: var(--success-bg); border-color: #a5d6a7; color: var(--success); }
+      .month-cell.due { background: var(--danger-bg); border-color: #ffcdd2; color: var(--danger); }
+      .month-cell.selectable { cursor: pointer; }
+      .month-cell.selectable:hover { filter: brightness(0.96); }
+      .month-cell.selected { outline: 2px solid var(--primary); outline-offset: 2px; }
+      .month-cell .m { display: block; font-size: 14px; font-weight: 800; font-family: 'Dosis', sans-serif; }
 
-function enterMember(memberId){
-  const m = DB.members.find(x=>x.id===memberId);
-  const sel = {};
-  if(m){ dueMonthsFor(m).forEach(ym => { sel[ym] = true; }); }
-  setState({ view:'memberView', memberId, query:'', selectedMonths: sel });
-}
-window.enterMember = enterMember;
+      /* Tables */
+      .payment-app-wrapper table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+      .payment-app-wrapper th, .payment-app-wrapper td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+      .payment-app-wrapper th { font-weight: 700; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; background: #fafbfa; }
+      .payment-app-wrapper tbody tr:hover td { background: #fdfaf6; }
+      .num { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+      .mstat {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 24px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer;
+      }
+      .mstat.paid { background: var(--success-bg); color: var(--success); }
+      .mstat.due { background: var(--danger-bg); color: var(--danger); }
 
-function alponaDivider(){
-  return `<svg class="alpona" viewBox="0 0 600 14" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="0" y1="7" x2="600" y2="7" stroke="#DCD3BF" stroke-width="1"/>
-    ${Array.from({length:30}).map((_,i)=>`<circle cx="${10+i*20}" cy="7" r="2.4" fill="${i%3===0?'#E8A33D':'#B5654A'}"/>`).join("")}
-  </svg>`;
-}
+      /* Receipts */
+      .receipt {
+        background: #fff; border: 2px dashed var(--line); border-radius: 12px; padding: 32px; max-width: 460px; margin: 0 auto;
+      }
+      .receipt .rh { text-align: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+      .receipt .rh h2 { font-size: 24px; color: var(--dark); font-family: 'Dosis', sans-serif;}
+      .receipt .rh p { font-size: 12px; color: var(--primary); font-weight: 700; text-transform: uppercase; }
+      .receipt .rrow { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; }
+      .receipt .rrow .k { color: var(--text-muted); }
+      .receipt .ramt { text-align: center; margin: 18px 0; }
+      .receipt .ramt .n { font-family: 'Dosis', sans-serif; font-size: 34px; font-weight: 800; color: var(--primary); }
+      .receipt .rfoot { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; color: var(--text-muted); }
 
-function renderHome(){
-  return `
-    <div class="brand">
-      <h1>Ichhepuron</h1>
-    </div>
-    <div class="tag">Monthly member dues</div>
-    ${alponaDivider()}
-    <p class="muted" style="max-width:520px;">A shared ledger for the group's monthly contribution. Members can check where they stand and pay online; the treasurer keeps everything up to date in one place.</p>
-    <div class="home-choice">
-      <div class="choice-card" onclick="setState({view:'memberPick'})">
-        <h3>I'm a member</h3>
-        <p>Find your name to see your paid and due months, and pay online if anything is pending.</p>
+      .badge-ui { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; }
+      .badge-ui.due { background: var(--danger-bg); color: var(--danger); }
+      .badge-ui.clear { background: var(--success-bg); color: var(--success); }
+      .err { color: var(--danger); font-size: 12.5px; margin-top: 8px; font-weight: 600; }
+      .back { font-size: 13px; color: var(--text-muted); text-decoration: none; cursor: pointer; font-weight: 600; display: inline-block; margin-bottom: 12px; }
+      .back:hover { color: var(--primary); }
+
+      /* Dropdown Search */
+      .search-wrap { position: relative; }
+      .dropdown {
+        position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line);
+        border-radius: 8px; margin-top: 4px; max-height: 240px; overflow-y: auto; z-index: 20; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      }
+      .dropdown div { padding: 10px 14px; font-size: 13.5px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
+      .dropdown div:hover { background: #fff5ee; color: var(--primary); }
+
+      /* Print Styles */
+      @media print {
+        body * { visibility: hidden; }
+        .receipt, .receipt * { visibility: visible; }
+        .receipt { position: absolute; top: 20px; left: 0; right: 0; margin: 0 auto; border: 1px solid #000; }
+        .no-print { display: none !important; }
+      }
+      
+      /* Mobile Adjustments for App */
+      @media (max-width: 768px) {
+        .card-app { padding: 18px 16px; }
+        .action-grid { grid-template-columns: 1fr; }
+        .month-grid { grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); }
+      }
+    </style>
+  </head>
+  <body>
+    
+  <!-- Theme Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light no-print" id="ftco-navbar">
+    <div class="container">
+      <a class="navbar-brand" style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" href="index.html">
+        <img src="./logo.png" alt="Icchepuron Logo" style= "height: 40px; width: auto; margin-right: 10px;">
+        Icchepuron
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="oi oi-menu"></span> Menu
+      </button>
+
+      <div class="collapse navbar-collapse" id="ftco-nav">
+        <ul class="navbar-nav ml-auto">
+          <!-- Note: Links point to index.html sections -->
+          <li class="nav-item"><a href="index.html#home" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="index.html#about" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="index.html#causes" class="nav-link">Ambitions</a></li>
+          <li class="nav-item"><a href="index.html#event" class="nav-link">Events</a></li>
+          <li class="nav-item"><a href="index.html#contact" class="nav-link">Contact</a></li>
+          <li class="nav-item"><a href="edu.html" class="nav-link">Education</a></li>
+          <li class="nav-item"><a href="nari.html" class="nav-link">NariRaksha</a></li>
+          <li class="nav-item active"><a href="ichhepuron_pay.html" class="nav-link">Pay Portal</a></li>
+        </ul>
       </div>
-      <div class="choice-card" onclick="setState({view:'donate', donateDone:false})">
-        <h3>Make a donation</h3>
-        <p>Give any amount, for any purpose, separate from monthly dues. Get a receipt instantly.</p>
-      </div>
-      <div class="choice-card" onclick="setState({view:'adminGate'})">
-        <h3>Treasurer</h3>
-        <p>Sign in to update payments, add members, review donations, and manage the Razorpay setup.</p>
-      </div>
     </div>
-  `;
-}
+  </nav>
 
-function renderMemberPick(){
-  const q = state.query.toLowerCase();
-  const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : [];
-  return `
-    <a class="back" onclick="setState({view:'home',query:''})">&larr; Back</a>
-    <h2 style="margin-top:14px;font-size:22px;">Find your name</h2>
-    <div class="search-wrap" style="max-width:380px;margin-top:12px;">
-      <input id="memberSearch" placeholder="Start typing your name" value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})" autocomplete="off"/>
-      ${matches.length ? `<div class="dropdown">${matches.map(m=>`<div onclick="enterMember('${m.id}')">${m.name}</div>`).join("")}</div>` : ""}
-    </div>
-    ${q && matches.length===0 ? `<p class="muted" style="margin-top:10px;">No match. Check the spelling, or ask the treasurer to add you.</p>` : ""}
-  `;
-}
-
-function renderMemberView(){
-  const member = DB.members.find(m=>m.id===state.memberId);
-  if(!member) return renderMemberPick();
-  const due = dueMonthsFor(member);
-  const paid = paidMonthsFor(member);
-  const allMonths = monthKeysFrom(member.joined||"2026-01", currentYM());
-  const totalDue = due.length * member.fee;
-  const isClear = due.length === 0;
-  const sel = state.selectedMonths || {};
-  const selectedCount = due.filter(ym => sel[ym]).length;
-  const selectedTotal = selectedCount * member.fee;
-  return `
-    <a class="back" onclick="setState({view:'memberPick',memberId:null})">&larr; Back</a>
-    <div class="topbar" style="margin-top:14px;">
-      <h2 style="font-size:24px;">${member.name}</h2>
-      <span class="badge ${isClear?'clear':'due'}">${isClear? 'All clear' : due.length+' month'+(due.length>1?'s':'')+' due'}</span>
-    </div>
-    <p class="muted">Monthly fee: <span class="num">${fmtINR(member.fee)}</span></p>
-    <div class="stats-row">
-      <div class="stat"><div class="n">${paid.length}</div><div class="l">Months paid</div></div>
-      <div class="stat"><div class="n">${due.length}</div><div class="l">Months due</div></div>
-      <div class="stat"><div class="n">${fmtINR(totalDue)}</div><div class="l">Total due</div></div>
-    </div>
-    <div class="month-grid">
-      ${allMonths.map(ym=>{
-        const p = !!member.payments[ym];
-        if(p) return `<div class="month-cell paid"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
-        const isSel = !!sel[ym];
-        return `<div class="month-cell due selectable ${isSel?'selected':''}" onclick="toggleMonthSelect('${ym}')"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
-      }).join("")}
-    </div>
-    ${!isClear ? `
-      <div class="card" style="margin-top:20px;">
-        <h3 style="font-size:16px;margin-bottom:6px;">Pay now</h3>
-        <p class="muted" style="margin-bottom:14px;">Click months above to choose which to pay — ${selectedCount} selected, ${fmtINR(selectedTotal)} total. All due months are pre-selected; unclick any you'd rather pay separately.</p>
-        <button class="primary" ${selectedCount===0?'disabled':''} onclick="startPayment('${member.id}')">Pay ${fmtINR(selectedTotal)}${selectedCount?` for ${selectedCount} month${selectedCount>1?'s':''}`:''}</button>
-        <div id="payErr" class="err"></div>
+  <!-- Inner Page Hero Banner -->
+  <div class="hero-wrap no-print" style="background-image: url('images/hero.jpg'); height: 350px;" data-stellar-background-ratio="0.5">
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row no-gutters slider-text align-items-center justify-content-center" style="height: 350px;">
+        <div class="col-md-9 ftco-animate text-center mt-5">
+          <p class="breadcrumbs mb-2"><span class="mr-2"><a href="index.html">Home</a></span> <span>/ Payments</span></p>
+          <h1 class="mb-0 bread" style="font-family:Arial, Helvetica, sans-serif;">Contribution & Dues Portal</h1>
+          <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px;">Empowering Lives Through Compassionate Care | Reg. No: S0029146</p>
+        </div>
       </div>
-    ` : `<p class="muted" style="margin-top:18px;">Nothing pending. Thank you.</p>`}
-  `;
-}
+    </div>
+  </div>
 
-function renderDonate(){
-  return `
-    <a class="back" onclick="setState({view:'home'})">&larr; Back</a>
-    <h2 style="margin-top:14px;font-size:22px;">Make a donation</h2>
-    <p class="muted" style="margin-bottom:16px;max-width:460px;">This is separate from monthly dues — any amount, for any purpose. You'll get a receipt right after paying.</p>
-    <div class="card" style="max-width:420px;">
-      <div class="field">
-        <label class="lbl">Your name</label>
-        <input id="donName" placeholder="Full name"/>
-      </div>
-      <div class="field">
-        <label class="lbl">Email (for your receipt)</label>
-        <input id="donEmail" type="email" placeholder="name@example.com"/>
-      </div>
-      <div class="field">
-        <label class="lbl">Amount (\u20B9)</label>
-        <input id="donAmount" type="number" min="1" placeholder="500"/>
-      </div>
-      <div class="field">
-        <label class="lbl">Purpose</label>
-        <select id="donPurpose">
-          <option value="General fund">General fund</option>
-          <option value="Puja and festival">Puja and festival</option>
-          <option value="Relief work">Relief work</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <button class="primary" onclick="startDonationPayment()">Donate</button>
-      <div id="donErr" class="err"></div>
+  <!-- Dynamic Application Section -->
+  <section class="ftco-section bg-light">
+    <div class="container">
+      <!-- App Root -->
+      <main id="root" class="payment-app-wrapper"></main>
     </div>
-  `;
-}
+  </section>
 
-function renderReceipt(){
-  const r = state.receipt;
-  if(!r) return renderHome();
-  return `
-    <div class="receipt">
-      <div class="rh">
-        <h2>Ichhepuron</h2>
-        <p>${r.type === 'donation' ? 'Donation receipt' : 'Payment receipt'}</p>
-        <svg width="120" height="10" viewBox="0 0 120 10" style="margin-top:10px;" xmlns="http://www.w3.org/2000/svg">
-          ${Array.from({length:9}).map((_,i)=>`<circle cx="${8+i*13}" cy="5" r="2" fill="${i%3===0?'#E8A33D':'#B5654A'}"/>`).join("")}
-        </svg>
+  <!-- Theme Footer -->
+  <footer class="ftco-footer ftco-section img no-print" style="font-size: 15px; padding: 10px 0;">
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">About Us</h2>
+            <p>Icchepuron, an NGO was founded to walk with aboriginal and to provide adequate light of education to them.</p>
+            <ul class="ftco-footer-social list-unstyled float-md-left float-lft mt-2">
+              <li class="ftco-animate"><a ><span class="icon-twitter"></span></a></li>
+              <li class="ftco-animate"><a href="https://www.facebook.com/Icchepuron2019"><span class="icon-facebook"></span></a></li>
+              <li class="ftco-animate"><a href="https://www.instagram.com/_icchepuron_/"><span class="icon-instagram"></span></a></li>
+            </ul>
+          </div>
+        </div>
+  
+        <div class="col-md-3">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">Have a Questions?</h2>
+            <div class="block-23 mb-2">
+              <ul>
+                <li><span class="icon icon-map-marker"></span><span class="text">Near Chowberia-II gram panchayat,Nahata,Gopalnagar,North 24 pgs,West bengal,743290</span></li>
+                <li><a><span class="icon icon-phone"></span><span class="text">+91 87688 71114</span></a></li>
+                <li><a><span class="icon icon-envelope"></span><span class="text">icchepuron2019.nahata@gmail.com</span></a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-md-6">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">Our Location</h2>
+            <div class="map-container" style="height: 200px;">
+              <iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3065.473044481011!2d88.70396507531294!3d22.993319979194318!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjLCsDU5JzM2LjAiTiA4OMKwNDInMjMuNSJF!5e1!3m2!1sen!2sin!4v1727079080248!5m2!1sen!2sin" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="rrow"><span class="k">Receipt no.</span><span>${r.id}</span></div>
-      <div class="rrow"><span class="k">Date</span><span>${r.date}</span></div>
-      <div class="rrow"><span class="k">Name</span><span>${r.name}</span></div>
-      ${r.email ? `<div class="rrow"><span class="k">Email</span><span>${r.email}</span></div>` : ""}
-      ${r.purpose ? `<div class="rrow"><span class="k">Purpose</span><span>${r.purpose}</span></div>` : ""}
-      ${r.months ? `<div class="rrow"><span class="k">Months covered</span><span>${r.months}</span></div>` : ""}
-      <div class="ramt"><div class="n">${fmtINR(r.amount)}</div></div>
-      <div class="rfoot">Thank you for your contribution to Ichhepuron.</div>
-    </div>
-    <div class="row no-print" style="justify-content:center;margin-top:20px;">
-      <button class="ghost" onclick="window.print()">Print / Save as PDF</button>
-      <button class="primary" onclick="setState({view:'home', receipt:null})">Done</button>
-    </div>
-  `;
-}
-
-function renderAdminDonations(){
-  const total = DB.donations.reduce((s,d)=>s+d.amount,0);
-  return `
-    <div class="topbar">
-      <h2 style="font-size:22px;">Donations</h2>
-      <button class="ghost small" onclick="setState({view:'admin'})">&larr; Back to members</button>
-    </div>
-    <div class="stats-row" style="margin-top:14px;">
-      <div class="stat"><div class="n">${DB.donations.length}</div><div class="l">Donations received</div></div>
-      <div class="stat"><div class="n">${fmtINR(total)}</div><div class="l">Total raised</div></div>
-    </div>
-    <div class="card" style="padding:0;overflow-x:auto;">
-      <table>
-        <thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Purpose</th><th>Amount</th></tr></thead>
-        <tbody>
-        ${DB.donations.length===0 ? `<tr><td colspan="5" class="muted" style="padding:16px;">No donations yet.</td></tr>` :
-          DB.donations.slice().reverse().map(d=>`
-            <tr>
-              <td>${d.date}</td><td>${d.name}</td><td>${d.email||'—'}</td><td>${d.purpose}</td>
-              <td class="num">${fmtINR(d.amount)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function renderAdminGate(){
-  return `
-    <a class="back" onclick="setState({view:'home'})">&larr; Back</a>
-    <h2 style="margin-top:14px;font-size:22px;">Treasurer sign-in</h2>
-    <div class="field" style="max-width:320px;margin-top:14px;">
-      <label class="lbl">Passcode</label>
-      <input id="adminPassInput" type="password" placeholder="Enter passcode" />
-    </div>
-    <button class="primary" onclick="tryAdminLogin()">Sign in</button>
-    <div id="adminErr" class="err"></div>
-    <p class="muted" style="margin-top:16px;font-size:12px;">Default passcode is <span class="num">ichhepuron2026</span> — change it in settings after signing in.</p>
-  `;
-}
-
-function renderAdmin(){
-  const totalMembers = DB.members.length;
-  const dueCount = DB.members.filter(m=>dueMonthsFor(m).length>0).length;
-  const totalOutstanding = DB.members.reduce((s,m)=>s+dueMonthsFor(m).length*m.fee,0);
-  const q = state.query.toLowerCase();
-  const rows = DB.members.filter(m=>m.name.toLowerCase().includes(q));
-  const cm = currentYM();
-  const monthsToShow = monthKeysFrom("2026-01", cm);
-  return `
-    <div class="topbar">
-      <h2 style="font-size:22px;">Treasurer dashboard</h2>
+  
       <div class="row">
-        <button class="ghost small" onclick="setState({view:'adminDonations'})">Donations</button>
-        <button class="ghost small" onclick="setState({view:'adminSettings'})">Settings</button>
+        <div class="col-md-12 text-center">
+          <p style="margin-bottom: 0;">
+            Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This Page is made by <a href="https://subhra-portfolio.netlify.app/" target="_blank">SUBHRA07</a>
+          </p>
+        </div>
       </div>
     </div>
-    <div class="stats-row" style="margin-top:14px;">
-      <div class="stat"><div class="n">${totalMembers}</div><div class="l">Members</div></div>
-      <div class="stat"><div class="n">${dueCount}</div><div class="l">With dues</div></div>
-      <div class="stat"><div class="n">${fmtINR(totalOutstanding)}</div><div class="l">Outstanding</div></div>
-    </div>
-    <div class="row" style="margin-bottom:14px;justify-content:space-between;">
-      <input style="max-width:260px;" placeholder="Search member" value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})"/>
-      <button class="primary small" onclick="setState({view:'adminAddMember'})">+ Add member</button>
-    </div>
-    <div class="card" style="padding:0;overflow-x:auto;">
-      <table>
-        <thead><tr>
-          <th>Name</th><th>Fee</th>
-          ${monthsToShow.map(ym=>`<th>${ymLabel(ym).split(" ")[0]}</th>`).join("")}
-          <th>Due</th>
-        </tr></thead>
-        <tbody>
-        ${rows.map(m=>`
-          <tr>
-            <td>${m.name}</td>
-            <td class="num">${fmtINR(m.fee)}</td>
-            ${monthsToShow.map(ym=>{
-              const p = !!m.payments[ym];
-              return `<td><span class="month-cell clickable ${p?'paid':'due'}" style="padding:4px 8px;display:inline-block;min-width:34px;text-align:center;" onclick="toggleMonth('${m.id}','${ym}')">${p?'\u2713':'\u2013'}</span></td>`;
+  </footer>
+
+  <!-- Loader -->
+  <div id="ftco-loader" class="show fullscreen no-print"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee"/><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" stroke="#F96D00"/></svg></div>
+
+  <!-- Theme Scripts -->
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery-migrate-3.0.1.min.js"></script>
+  <script src="js/popper.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/jquery.easing.1.3.js"></script>
+  <script src="js/jquery.waypoints.min.js"></script>
+  <script src="js/jquery.stellar.min.js"></script>
+  <script src="js/owl.carousel.min.js"></script>
+  <script src="js/jquery.magnific-popup.min.js"></script>
+  <script src="js/aos.js"></script>
+  <script src="js/jquery.animateNumber.min.js"></script>
+  <script src="js/scrollax.min.js"></script>
+  <script src="js/main.js"></script>
+
+  <!-- Payment Application Logic -->
+  <script>
+    const STORAGE_KEY = "ichhepuron_ledger_v1";
+    const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    const SEED_MEMBERS = [
+      ["Arka Chakraborty",30,0,0,0],["Arpita Chowdhury",30,1,1,1],["Atanu Dutta",100,1,1,1],
+      ["Biplab Sarkar",50,1,1,1],["Deb Sarkar",30,0,0,0],["Dishani Dhali",30,0,0,0],
+      ["Jayatri Sarkar",30,1,1,1],["Madhurima Mondal",30,1,1,1],["Mitali Biswas",50,1,1,1],
+      ["Nayan Maitra",30,0,0,0],["Niladri Sarkar",30,1,1,1],["Nilambar Sarkar",50,1,1,1],
+      ["Nirmal Baugh",50,1,1,1],["Nishanta Das",30,1,1,1],["Poulomi Bhowmick",30,0,0,0],
+      ["Pranati Paul",100,1,1,1],["Priti Roy",30,1,1,1],["Rahul Biswas",30,1,1,1],
+      ["Rana Das",30,1,1,1],["Ratul Biswas",30,0,0,0],["Rimi Debnath",30,1,1,1],
+      ["Saikat Roy",30,1,1,1],["Salma Khatun",30,1,1,1],["Sandip Sarkar",30,1,1,1],
+      ["Sarama Poddar",30,1,1,1],["Sayantan Singha Roy",30,1,1,1],["Rimi Dutta",30,0,0,1],
+      ["Shirsa Biswas",30,1,1,1],["Sima Nandi",50,1,1,1],["Soumita Majumder",50,1,1,1],
+      ["Sriparno Roy",30,0,0,0],["Subhajeet Das",100,0,0,0],["Sucheta Mallick",30,0,0,0],
+      ["Swagata Dutta",30,0,0,0],["Swarup Joadder",100,1,1,1],["Tanmay Das",50,1,1,1],
+      ["Titli Das",30,1,1,1],["Tuhin Dhali",30,1,1,1],["Uttam Kumar Sarkar",100,1,1,1],
+      ["Pratik Kotal",30,1,1,1],["Keya Mondal",50,1,1,1],["Diganta Moulik",30,1,1,1],
+      ["Aloy Singha Roy",30,1,1,1],["Sinchan Karmakar",30,1,1,1],["Sruti Mishra",30,0,0,0],
+      ["Roni Dey",30,1,1,1],["Anshuman Sarkar",30,1,1,1],["Shreya Das",30,1,1,1],
+      ["Sandeep Mandal",30,1,1,1],["Swadesh Biswas",100,1,1,1],["Dip Roy",30,1,1,1],
+      ["Supriya Sarkar",30,1,1,1],["Anindya Sarkar",30,1,1,1],["Jayashri Bar",30,0,0,0],
+      ["Santosh Mondal",50,1,1,1],["Santu Dhali",50,1,1,1],["Barnali Biswas",200,1,1,1],
+      ["Subhra Pratim Mondal",50,1,1,1],["Sanjay Biswas",50,1,1,1],["Babul Majumdar",50,1,1,1],
+      ["Archita Sarkar",50,0,0,1],["Rumpa Sarkar",50,1,1,1],["Shayan Mistri",50,0,0,0],
+      ["Anisha Dhali",50,1,1,1],["Anuska Mondal",50,1,1,1],["Prakash Sarkar",50,1,1,1],
+      ["Tanujoy Mallick",50,1,1,1],["Ritesh Mallick",30,1,1,1],["Rahul Roy",50,1,1,1],
+      ["Mouli Pal",50,1,1,1],["Sangeeta Samaddar",100,1,1,1],["Bibekananda Biswas",50,1,1,1],
+      ["Somnath Sarkar",100,1,1,1],["Soumik Sarkar",50,1,1,1],["Biprendu Roy",50,1,1,1],
+      ["Sudipta Sarkar",30,1,1,1],["Amrita Sarkar",50,1,1,1],["Subhasish Sarkar",50,1,1,1],
+      ["Soumen Debnath",200,1,1,1],["Abir Shankhari",500,0,0,0]
+    ];
+
+    function buildSeed(){
+      const members = SEED_MEMBERS.map((m,i)=>{
+        const payments = {};
+        const flags = [m[2],m[3],m[4]];
+        ["2026-01","2026-02","2026-03"].forEach((k,idx)=>{ payments[k] = !!flags[idx]; });
+        return { id: "m"+(i+1), name: m[0], fee: m[1], payments, joined: "2026-01" };
+      });
+      return { members, donations: [], config: { razorpayKeyId: "", adminPass: "ichhepuron2026" }, updatedAt: Date.now() };
+    }
+
+    function monthKeysFrom(startYM, endYM){
+      const out = [];
+      let [sy,sm] = startYM.split("-").map(Number);
+      const [ey,em] = endYM.split("-").map(Number);
+      while(sy < ey || (sy===ey && sm<=em)){
+        out.push(sy+"-"+String(sm).padStart(2,"0"));
+        sm++; if(sm>12){sm=1; sy++;}
+      }
+      return out;
+    }
+    function currentYM(){
+      const d = new Date();
+      return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+    }
+    function ymLabel(ym){
+      const [y,m] = ym.split("-").map(Number);
+      return MONTH_NAMES[m-1]+" "+y;
+    }
+    function fmtINR(n){
+      return "\u20B9"+Number(n).toLocaleString("en-IN");
+    }
+
+    const SUPABASE_URL = "https://lbtunkhowosikodceikv.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidHVua2hvd29zaWtvZGNlaWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzU2MDEsImV4cCI6MjEwMjkxMTYwMX0.GFUrMC__hY2Bop56QK1LhC70HwjHyKQJ78cfNv-T0eI";
+    const supabaseClient = (SUPABASE_URL.startsWith("http") && window.supabase)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    let DB = null;
+
+    async function loadDB(){
+      try{
+        if(!supabaseClient) throw new Error("Supabase client not initialized");
+        const { data, error } = await supabaseClient.from('kv_store').select('value').eq('key', STORAGE_KEY).maybeSingle();
+        if(error) throw error;
+        if(data && data.value){ DB = data.value; }
+        else { DB = buildSeed(); await saveDB(); }
+      }catch(e){
+        console.warn("Using local cache / seed state", e);
+        DB = buildSeed();
+      }
+      if(!DB.donations) DB.donations = [];
+    }
+    function receiptNo(){
+      return "ICH-" + Date.now().toString(36).toUpperCase();
+    }
+    async function saveDB(){
+      DB.updatedAt = Date.now();
+      if(supabaseClient){
+        try {
+          await supabaseClient.from('kv_store').upsert({ key: STORAGE_KEY, value: DB });
+        } catch(e) {
+          console.error("Save failed:", e);
+        }
+      }
+    }
+
+    function dueMonthsFor(member){
+      const start = member.joined || "2026-01";
+      const all = monthKeysFrom(start, currentYM());
+      return all.filter(ym => !member.payments[ym]);
+    }
+    function paidMonthsFor(member){
+      const start = member.joined || "2026-01";
+      const all = monthKeysFrom(start, currentYM());
+      return all.filter(ym => !!member.payments[ym]);
+    }
+
+    let state = { view: "home", memberId: null, adminAuthed: false, query: "", toast: null, selectedMonths: {}, receipt: null };
+    const root = document.getElementById("root");
+
+    function setState(patch){ state = Object.assign({}, state, patch); render(); }
+
+    function enterMember(memberId){
+      const m = DB.members.find(x=>x.id===memberId);
+      const sel = {};
+      if(m){ dueMonthsFor(m).forEach(ym => { sel[ym] = true; }); }
+      setState({ view:'memberView', memberId, query:'', selectedMonths: sel });
+    }
+    window.enterMember = enterMember;
+
+    function renderHome(){
+      return `
+        <div class="action-grid">
+          <div class="action-card card-orange" onclick="setState({view:'memberPick'})">
+            <div>
+              <h3>Monthly Member Dues</h3>
+              <p>Search your member profile, check paid/due months, and clear pending contributions securely.</p>
+            </div>
+            <span class="btn-tag">Check Status &rarr;</span>
+          </div>
+          <div class="action-card card-amber" onclick="setState({view:'donate', donateDone:false})">
+            <div>
+              <h3>Make a Donation</h3>
+              <p>Support our ongoing education, health, and social welfare programs with an instant tax receipt.</p>
+            </div>
+            <span class="btn-tag">Donate Now &rarr;</span>
+          </div>
+          <div class="action-card card-dark" onclick="setState({view:'adminGate'})">
+            <div>
+              <h3>Treasurer Dashboard</h3>
+              <p>Manage member records, reconcile offline/online dues, and export complete ledger statements.</p>
+            </div>
+            <span class="btn-tag">Sign In &rarr;</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMemberPick(){
+      const q = state.query.toLowerCase();
+      const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : [];
+      return `
+        <a class="back" onclick="setState({view:'home',query:''})">&larr; Back to Options</a>
+        <div class="card-app" style="max-width:540px;">
+          <h2 style="font-size:24px;margin-bottom:6px;">Find Member Profile</h2>
+          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:16px;">Type your registered name to view your status.</p>
+          <div class="search-wrap">
+            <input id="memberSearch" placeholder="Type your name (e.g. Subhra, Santu, Barnali)..." value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})" autocomplete="off"/>
+            ${matches.length ? `<div class="dropdown">${matches.map(m=>`<div onclick="enterMember('${m.id}')"><strong>${m.name}</strong> <span style="font-size:12px;color:#888;">(\u20B9${m.fee}/mo)</span></div>`).join("")}</div>` : ""}
+          </div>
+          ${q && matches.length===0 ? `<p class="err" style="margin-top:12px;">No matching member found. Please contact the treasurer to update the roster.</p>` : ""}
+        </div>
+      `;
+    }
+
+    function renderMemberView(){
+      const member = DB.members.find(m=>m.id===state.memberId);
+      if(!member) return renderMemberPick();
+      const due = dueMonthsFor(member);
+      const paid = paidMonthsFor(member);
+      const allMonths = monthKeysFrom(member.joined||"2026-01", currentYM());
+      const totalDue = due.length * member.fee;
+      const isClear = due.length === 0;
+      const sel = state.selectedMonths || {};
+      const selectedCount = due.filter(ym => sel[ym]).length;
+      const selectedTotal = selectedCount * member.fee;
+      return `
+        <a class="back" onclick="setState({view:'memberPick',memberId:null})">&larr; Back to Member Search</a>
+        <div class="card-app">
+          <div class="topbar">
+            <div>
+              <h2 style="font-size:26px;">${member.name}</h2>
+              <p style="font-size:13px;color:var(--text-muted);">Assigned Monthly Fee: <strong class="num">${fmtINR(member.fee)}</strong></p>
+            </div>
+            <span class="badge-ui ${isClear?'clear':'due'}">${isClear ? 'All Dues Cleared' : due.length+' Month(s) Pending'}</span>
+          </div>
+          
+          <div class="stats-row">
+            <div class="stat"><div class="n">${paid.length}</div><div class="l">Months Paid</div></div>
+            <div class="stat"><div class="n">${due.length}</div><div class="l">Months Due</div></div>
+            <div class="stat"><div class="n">${fmtINR(totalDue)}</div><div class="l">Total Outstanding</div></div>
+          </div>
+
+          <h3 style="font-size:16px;margin:18px 0 8px;">Monthly Contribution Breakdown</h3>
+          <div class="month-grid">
+            ${allMonths.map(ym=>{
+              const p = !!member.payments[ym];
+              if(p) return `<div class="month-cell paid"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
+              const isSel = !!sel[ym];
+              return `<div class="month-cell due selectable ${isSel?'selected':''}" onclick="toggleMonthSelect('${ym}')"><span class="m">${ymLabel(ym).split(" ")[0]}</span>${ymLabel(ym).split(" ")[1]}</div>`;
             }).join("")}
-            <td class="num">${dueMonthsFor(m).length}</td>
-          </tr>
-        `).join("")}
-        </tbody>
-      </table>
-    </div>
-    <p class="muted" style="margin-top:10px;font-size:12px;">Click a month cell to toggle paid/due for that member.</p>
-  `;
-}
+          </div>
 
-function renderAdminAddMember(){
-  return `
-    <a class="back" onclick="setState({view:'admin'})">&larr; Back to dashboard</a>
-    <h2 style="margin-top:14px;font-size:20px;">Add a member</h2>
-    <div class="field" style="max-width:340px;margin-top:14px;">
-      <label class="lbl">Full name</label>
-      <input id="newName" placeholder="e.g. Ritwik Ghosh"/>
-    </div>
-    <div class="field" style="max-width:340px;">
-      <label class="lbl">Monthly fee (\u20B9)</label>
-      <input id="newFee" type="number" placeholder="30"/>
-    </div>
-    <button class="primary" onclick="addMember()">Add member</button>
-    <div id="addErr" class="err"></div>
-  `;
-}
+          ${!isClear ? `
+            <div style="background:#fafbfa;border:1px solid var(--line);border-radius:8px;padding:18px;margin-top:20px;">
+              <h4 style="font-size:16px;margin-bottom:6px;">Pay Pending Contributions</h4>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Select the months above to pay online. <strong>${selectedCount} month(s)</strong> selected for a total of <strong>${fmtINR(selectedTotal)}</strong>.</p>
+              <button class="primary" ${selectedCount===0?'disabled':''} onclick="startPayment('${member.id}')">Proceed to Pay ${fmtINR(selectedTotal)}</button>
+              <div id="payErr" class="err"></div>
+            </div>
+          ` : `<div style="padding:14px;background:var(--success-bg);color:var(--success);border-radius:8px;font-weight:600;font-size:13.5px;margin-top:14px;">Thank you! Your membership dues are up to date.</div>`}
+        </div>
+      `;
+    }
 
-function renderAdminSettings(){
-  const cfg = DB.config;
-  return `
-    <a class="back" onclick="setState({view:'admin'})">&larr; Back to dashboard</a>
-    <h2 style="margin-top:14px;font-size:20px;">Settings</h2>
-    <div class="card" style="margin-top:14px;">
-      <h3 style="font-size:15px;margin-bottom:10px;">Razorpay</h3>
-      <p class="muted" style="margin-bottom:12px;">Paste your Razorpay <strong>Key ID</strong> (starts with rzp_) from your Razorpay dashboard &rarr; Settings &rarr; API Keys. This is the public key only, safe to store here.</p>
-      <div class="field">
-        <label class="lbl">Key ID</label>
-        <input id="keyIdInput" placeholder="rzp_live_xxxxxxxxxxxx" value="${(cfg.razorpayKeyId||'').replace(/"/g,'&quot;')}"/>
-      </div>
-      <button class="primary small" onclick="saveKeyId()">Save key</button>
-      <div id="keyErr" class="err"></div>
-    </div>
-    <div class="card">
-      <h3 style="font-size:15px;margin-bottom:10px;">Change passcode</h3>
-      <div class="field">
-        <label class="lbl">New passcode</label>
-        <input id="newPassInput" type="password" placeholder="New passcode"/>
-      </div>
-      <button class="primary small" onclick="changePasscode()">Update passcode</button>
-      <div id="passErr" class="err"></div>
-    </div>
-  `;
-}
+    function renderDonate(){
+      return `
+        <a class="back" onclick="setState({view:'home'})">&larr; Back to Options</a>
+        <div class="card-app" style="max-width:480px;">
+          <h2 style="font-size:24px;margin-bottom:4px;">Make a Donation</h2>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Support Icchepuron's relief, educational, and community initiatives.</p>
+          
+          <div class="field">
+            <label class="lbl">Full Name</label>
+            <input id="donName" placeholder="e.g. Subhra Mondal"/>
+          </div>
+          <div class="field">
+            <label class="lbl">Email Address (For Receipt)</label>
+            <input id="donEmail" type="email" placeholder="name@example.com"/>
+          </div>
+          <div class="field">
+            <label class="lbl">Donation Amount (\u20B9)</label>
+            <input id="donAmount" type="number" min="10" placeholder="500"/>
+          </div>
+          <div class="field">
+            <label class="lbl">Cause / Purpose</label>
+            <select id="donPurpose">
+              <option value="General Fund & Welfare">General Fund & Welfare</option>
+              <option value="Education & Study Materials">Education & Study Materials</option>
+              <option value="NariRaksha & Women Safety">NariRaksha & Women Safety</option>
+              <option value="Winter Clothes & Relief Drive">Winter Clothes & Relief Drive</option>
+            </select>
+          </div>
+          <button class="primary" style="width:100%;margin-top:6px;" onclick="startDonationPayment()">Complete Donation</button>
+          <div id="donErr" class="err"></div>
+        </div>
+      `;
+    }
 
-window.setState = setState;
+    function renderReceipt(){
+      const r = state.receipt;
+      if(!r) return renderHome();
+      return `
+        <div class="receipt">
+          <div class="rh">
+            <h2>ICCHEPURON</h2>
+            <p>${r.type === 'donation' ? 'Official Donation Receipt' : 'Membership Dues Receipt'}</p>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Reg. No: S0029146</div>
+          </div>
+          <div class="rrow"><span class="k">Receipt No:</span><span class="num">${r.id}</span></div>
+          <div class="rrow"><span class="k">Date:</span><span>${r.date}</span></div>
+          <div class="rrow"><span class="k">Contributor:</span><strong>${r.name}</strong></div>
+          ${r.email ? `<div class="rrow"><span class="k">Email:</span><span>${r.email}</span></div>` : ""}
+          ${r.purpose ? `<div class="rrow"><span class="k">Purpose:</span><span>${r.purpose}</span></div>` : ""}
+          ${r.months ? `<div class="rrow"><span class="k">Months Paid:</span><span>${r.months}</span></div>` : ""}
+          <div class="ramt"><div class="n">${fmtINR(r.amount)}</div></div>
+          <div class="rfoot">Thank you for standing with Icchepuron to empower lives.</div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;" class="no-print">
+          <button class="ghost" onclick="window.print()">Print Receipt</button>
+          <button class="primary" onclick="setState({view:'home', receipt:null})">Done</button>
+        </div>
+      `;
+    }
 
-window.tryAdminLogin = function(){
-  const val = document.getElementById("adminPassInput").value;
-  if(val === DB.config.adminPass){
-    setState({view:"admin", adminAuthed:true, query:""});
-  } else {
-    document.getElementById("adminErr").textContent = "Wrong passcode. Try again.";
-  }
-};
+    function renderAdminGate(){
+      return `
+        <a class="back" onclick="setState({view:'home'})">&larr; Back to Options</a>
+        <div class="card-app" style="max-width:360px;">
+          <h2 style="font-size:22px;margin-bottom:8px;">Treasurer Sign In</h2>
+          <div class="field">
+            <label class="lbl">Access Passcode</label>
+            <input id="adminPassInput" type="password" placeholder="Enter treasurer passcode" />
+          </div>
+          <button class="primary" style="width:100%;" onclick="tryAdminLogin()">Unlock Dashboard</button>
+          <div id="adminErr" class="err"></div>
+        </div>
+      `;
+    }
 
-window.toggleMonth = async function(memberId, ym){
-  const m = DB.members.find(x=>x.id===memberId);
-  if(!m) return;
-  m.payments[ym] = !m.payments[ym];
-  await saveDB();
-  render();
-};
+    function renderAdmin(){
+      const totalMembers = DB.members.length;
+      const dueCount = DB.members.filter(m=>dueMonthsFor(m).length>0).length;
+      const totalOutstanding = DB.members.reduce((s,m)=>s+dueMonthsFor(m).length*m.fee,0);
+      const q = state.query.toLowerCase();
+      const rows = DB.members.filter(m=>m.name.toLowerCase().includes(q));
+      const cm = currentYM();
+      const monthsToShow = monthKeysFrom("2026-01", cm);
+      return `
+        <a class="back" onclick="setState({view:'home', adminAuthed:false, query:''})">&larr; Sign Out</a>
+        <div class="topbar">
+          <div>
+            <h2 style="font-size:24px;">Treasurer Control Desk</h2>
+            <p style="font-size:13px;color:var(--text-muted);">Manage offline reconciliations, rosters, and ledger reports</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="ghost small" onclick="setState({view:'adminDonations'})">Donations (${DB.donations.length})</button>
+            <button class="ghost small" onclick="setState({view:'adminSettings'})">Settings</button>
+            <button class="primary small" onclick="downloadLedgerPDF()">Export PDF</button>
+          </div>
+        </div>
 
-window.addMember = async function(){
-  const name = document.getElementById("newName").value.trim();
-  const fee = Number(document.getElementById("newFee").value);
-  const err = document.getElementById("addErr");
-  if(!name){ err.textContent = "Enter a name first."; return; }
-  if(!fee || fee <= 0){ err.textContent = "Enter a valid monthly fee."; return; }
-  const id = "m"+(DB.members.length+1)+"_"+Date.now();
-  DB.members.push({ id, name, fee, payments:{}, joined: currentYM() });
-  await saveDB();
-  setState({view:"admin", query:""});
-};
+        <div class="stats-row">
+          <div class="stat"><div class="n">${totalMembers}</div><div class="l">Total Members</div></div>
+          <div class="stat"><div class="n">${dueCount}</div><div class="l">With Pending Dues</div></div>
+          <div class="stat"><div class="n">${fmtINR(totalOutstanding)}</div><div class="l">Total Outstanding</div></div>
+        </div>
 
-window.saveKeyId = async function(){
-  const val = document.getElementById("keyIdInput").value.trim();
-  const err = document.getElementById("keyErr");
-  if(val && !val.startsWith("rzp_")){ err.textContent = "Key ID should start with rzp_"; return; }
-  DB.config.razorpayKeyId = val;
-  await saveDB();
-  err.style.color = "var(--leaf)";
-  err.textContent = "Saved.";
-};
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
+          <input style="max-width:280px; flex: 1;" placeholder="Search member name..." value="${state.query.replace(/"/g,'&quot;')}" oninput="setState({query:this.value})"/>
+          <button class="primary small" onclick="setState({view:'adminAddMember'})">+ Register Member</button>
+        </div>
 
-window.changePasscode = async function(){
-  const val = document.getElementById("newPassInput").value;
-  const err = document.getElementById("passErr");
-  if(!val || val.length < 4){ err.textContent = "Use at least 4 characters."; return; }
-  DB.config.adminPass = val;
-  await saveDB();
-  err.style.color = "var(--leaf)";
-  err.textContent = "Passcode updated.";
-};
+        <div class="card-app" style="padding:0;overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Member Name</th>
+                <th>Fee</th>
+                ${monthsToShow.map(ym=>`<th>${ymLabel(ym).split(" ")[0]}</th>`).join("")}
+                <th>Due</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(m=>`
+                <tr>
+                  <td><strong>${m.name}</strong></td>
+                  <td class="num">${fmtINR(m.fee)}</td>
+                  ${monthsToShow.map(ym=>{
+                    const p = !!m.payments[ym];
+                    return `<td><span class="mstat ${p?'paid':'due'}" title="Toggle status" onclick="toggleMonth('${m.id}','${ym}')">${p?'\u2713':'\u2013'}</span></td>`;
+                  }).join("")}
+                  <td class="num" style="font-weight:700;color:${dueMonthsFor(m).length?'var(--danger)':'var(--success)'}">${dueMonthsFor(m).length}</td>
+                  <td><button class="ghost small" style="color:var(--danger);" onclick="removeMember('${m.id}','${m.name.replace(/'/g,"\\'")}')">Delete</button></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
 
-window.toggleMonthSelect = function(ym){
-  const sel = Object.assign({}, state.selectedMonths);
-  sel[ym] = !sel[ym];
-  setState({ selectedMonths: sel });
-};
+    function renderAdminAddMember(){
+      return `
+        <a class="back" onclick="setState({view:'admin'})">&larr; Back to Dashboard</a>
+        <div class="card-app" style="max-width:380px;">
+          <h2 style="font-size:22px;margin-bottom:12px;">Add Member</h2>
+          <div class="field">
+            <label class="lbl">Full Name</label>
+            <input id="newName" placeholder="Member full name"/>
+          </div>
+          <div class="field">
+            <label class="lbl">Monthly Contribution (\u20B9)</label>
+            <input id="newFee" type="number" placeholder="50"/>
+          </div>
+          <button class="primary" style="width:100%;" onclick="addMember()">Save Member</button>
+          <div id="addErr" class="err"></div>
+        </div>
+      `;
+    }
 
-window.startPayment = function(memberId){
-  const m = DB.members.find(x=>x.id===memberId);
-  const errEl = document.getElementById("payErr");
-  errEl.textContent = "";
-  const keyId = DB.config.razorpayKeyId;
-  if(!keyId){
-    errEl.textContent = "Online payment isn't set up yet. Please ask the treasurer, or pay them directly.";
-    return;
-  }
-  const due = dueMonthsFor(m);
-  const chosen = due.filter(ym => state.selectedMonths && state.selectedMonths[ym]);
-  const amount = chosen.length * m.fee;
-  if(amount <= 0){ errEl.textContent = "Select at least one month to pay."; return; }
-  const options = {
-    key: keyId,
-    amount: amount * 100,
-    currency: "INR",
-    name: "Ichhepuron",
-    description: chosen.length + " month(s) — " + m.name,
-    handler: async function(response){
-      chosen.forEach(ym => { m.payments[ym] = true; });
+    function renderAdminDonations(){
+      const total = DB.donations.reduce((s,d)=>s+d.amount,0);
+      return `
+        <a class="back" onclick="setState({view:'admin'})">&larr; Back to Dashboard</a>
+        <div class="topbar">
+          <h2 style="font-size:24px;">Donation Records</h2>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><div class="n">${DB.donations.length}</div><div class="l">Contributions</div></div>
+          <div class="stat"><div class="n">${fmtINR(total)}</div><div class="l">Total Collected</div></div>
+        </div>
+        <div class="card-app" style="padding:0;overflow-x:auto;">
+          <table>
+            <thead><tr><th>Date</th><th>Donor Name</th><th>Email</th><th>Purpose</th><th>Amount</th><th></th></tr></thead>
+            <tbody>
+              ${DB.donations.length===0 ? `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-muted);">No donations recorded yet.</td></tr>` :
+                DB.donations.slice().reverse().map(d=>`
+                  <tr>
+                    <td>${d.date}</td><td><strong>${d.name}</strong></td><td>${d.email||'—'}</td><td>${d.purpose}</td>
+                    <td class="num">${fmtINR(d.amount)}</td>
+                    <td><button class="ghost small" style="color:var(--danger);" onclick="removeDonation('${d.id}')">Delete</button></td>
+                  </tr>
+                `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderAdminSettings(){
+      const cfg = DB.config;
+      return `
+        <a class="back" onclick="setState({view:'admin'})">&larr; Back to Dashboard</a>
+        <div class="card-app" style="max-width:500px;">
+          <h2 style="font-size:22px;margin-bottom:14px;">Portal Configuration</h2>
+          <div class="field">
+            <label class="lbl">Razorpay Public Key ID</label>
+            <input id="keyIdInput" placeholder="rzp_live_xxxxxxxxxxxx" value="${(cfg.razorpayKeyId||'').replace(/"/g,'&quot;')}"/>
+          </div>
+          <button class="primary small" onclick="saveKeyId()">Save API Key</button>
+          <div id="keyErr" class="err"></div>
+          
+          <hr style="margin:24px 0;border:0;border-top:1px solid var(--line);"/>
+          
+          <div class="field">
+            <label class="lbl">Change Admin Passcode</label>
+            <input id="newPassInput" type="password" placeholder="New passcode"/>
+          </div>
+          <button class="primary small" onclick="changePasscode()">Update Passcode</button>
+          <div id="passErr" class="err"></div>
+        </div>
+      `;
+    }
+
+    window.setState = setState;
+
+    window.tryAdminLogin = function(){
+      const val = document.getElementById("adminPassInput").value;
+      if(val === DB.config.adminPass){
+        setState({view:"admin", adminAuthed:true, query:""});
+      } else {
+        document.getElementById("adminErr").textContent = "Invalid passcode. Please try again.";
+      }
+    };
+
+    window.toggleMonth = async function(memberId, ym){
+      const m = DB.members.find(x=>x.id===memberId);
+      if(!m) return;
+      m.payments[ym] = !m.payments[ym];
       await saveDB();
-      const monthsLabel = chosen.map(ymLabel).join(", ");
-      setState({
-        view: "receipt",
-        receipt: {
-          type: "dues", id: response.razorpay_payment_id || receiptNo(),
-          date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' }),
-          name: m.name, amount, months: monthsLabel
+      render();
+    };
+
+    window.addMember = async function(){
+      const name = document.getElementById("newName").value.trim();
+      const fee = Number(document.getElementById("newFee").value);
+      const err = document.getElementById("addErr");
+      if(!name){ err.textContent = "Please enter member name."; return; }
+      if(!fee || fee <= 0){ err.textContent = "Please enter a valid monthly fee."; return; }
+      const id = "m"+(DB.members.length+1)+"_"+Date.now();
+      DB.members.push({ id, name, fee, payments:{}, joined: currentYM() });
+      await saveDB();
+      setState({view:"admin", query:""});
+    };
+
+    window.removeMember = async function(memberId, name){
+      if(!confirm("Remove " + name + " from the records?")) return;
+      DB.members = DB.members.filter(m => m.id !== memberId);
+      await saveDB();
+      render();
+    };
+
+    window.removeDonation = async function(donationId){
+      if(!confirm("Delete this donation record?")) return;
+      DB.donations = DB.donations.filter(d => d.id !== donationId);
+      await saveDB();
+      render();
+    };
+
+    window.downloadLedgerPDF = function(){
+      if(!window.jspdf || !window.jspdf.jsPDF){
+        alert("PDF library is still loading. Please try again in a moment.");
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const q = state.query.toLowerCase();
+      const rows = DB.members.filter(m=>m.name.toLowerCase().includes(q));
+      const cm = currentYM();
+      const monthsToShow = monthKeysFrom("2026-01", cm);
+      const doc = new jsPDF({ orientation: monthsToShow.length > 6 ? "landscape" : "portrait", unit: "pt" });
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("ICCHEPURON — Member Dues Ledger", 40, 40);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Generated on: " + new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' }), 40, 58);
+
+      const head = [["Name","Fee", ...monthsToShow.map(ym=>ymLabel(ym).split(" ")[0]), "Pending"]];
+      const body = rows.map(m=>[
+        m.name,
+        fmtINR(m.fee),
+        ...monthsToShow.map(ym => m.payments[ym] ? "Paid" : "Due"),
+        String(dueMonthsFor(m).length)
+      ]);
+
+      doc.autoTable({
+        head, body,
+        startY: 72,
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [248, 111, 45], textColor: 255 },
+        didParseCell: function(data){
+          if(data.section === 'body' && data.column.index >= 2 && data.column.index < 2 + monthsToShow.length){
+            if(data.cell.raw === 'Paid'){ data.cell.styles.textColor = [46, 125, 50]; }
+            else if(data.cell.raw === 'Due'){ data.cell.styles.textColor = [198, 40, 40]; }
+          }
         }
       });
-    },
-    theme: { color: "#B5654A" },
-    modal: { ondismiss: function(){ } }
-  };
-  try{
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function(resp){
-      errEl.textContent = "Payment didn't go through. Please try again.";
-    });
-    rzp.open();
-  }catch(e){
-    errEl.textContent = "Couldn't open payment window. Check the Razorpay key in settings.";
-  }
-};
 
-window.startDonationPayment = function(){
-  const errEl = document.getElementById("donErr");
-  errEl.textContent = "";
-  const name = document.getElementById("donName").value.trim();
-  const email = document.getElementById("donEmail").value.trim();
-  const amount = Number(document.getElementById("donAmount").value);
-  const purpose = document.getElementById("donPurpose").value;
-  if(!name){ errEl.textContent = "Enter your name."; return; }
-  if(email && !/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent = "That email doesn't look right."; return; }
-  if(!amount || amount <= 0){ errEl.textContent = "Enter a donation amount."; return; }
-  const keyId = DB.config.razorpayKeyId;
-  if(!keyId){ errEl.textContent = "Online payment isn't set up yet. Please ask the treasurer."; return; }
-  const options = {
-    key: keyId,
-    amount: Math.round(amount * 100),
-    currency: "INR",
-    name: "Ichhepuron",
-    description: "Donation — " + purpose,
-    prefill: { name, email },
-    handler: async function(response){
-      const donation = {
-        id: response.razorpay_payment_id || receiptNo(),
-        name, email, amount, purpose,
-        date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' })
-      };
-      DB.donations.push(donation);
+      const totalOutstanding = rows.reduce((s,m)=>s+dueMonthsFor(m).length*m.fee,0);
+      const finalY = doc.lastAutoTable.finalY || 80;
+      doc.setFontSize(10);
+      doc.text("Total Members: " + rows.length + "    |    Total Outstanding: " + fmtINR(totalOutstanding), 40, finalY + 24);
+      doc.save("icchepuron-dues-" + cm + ".pdf");
+    };
+
+    window.saveKeyId = async function(){
+      const val = document.getElementById("keyIdInput").value.trim();
+      const err = document.getElementById("keyErr");
+      if(val && !val.startsWith("rzp_")){ err.textContent = "Razorpay key should start with 'rzp_'"; return; }
+      DB.config.razorpayKeyId = val;
       await saveDB();
-      setState({
-        view: "receipt",
-        receipt: { type: "donation", id: donation.id, date: donation.date, name, email, amount, purpose }
-      });
-    },
-    theme: { color: "#B5654A" },
-    modal: { ondismiss: function(){ } }
-  };
-  try{
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function(resp){
-      errEl.textContent = "Payment didn't go through. Please try again.";
-    });
-    rzp.open();
-  }catch(e){
-    errEl.textContent = "Couldn't open payment window. Check the Razorpay key in settings.";
-  }
-};
+      err.style.color = "var(--success)";
+      err.textContent = "API Key saved.";
+    };
 
-function render(){
-  let html = "";
-  if(state.toast){
-    html += `<div class="toast">${state.toast}</div>`;
-  }
-  switch(state.view){
-    case "home": html += renderHome(); break;
-    case "memberPick": html += renderMemberPick(); break;
-    case "memberView": html += renderMemberView(); break;
-    case "adminGate": html += renderAdminGate(); break;
-    case "admin":
-      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
-      html += renderAdmin(); break;
-    case "adminAddMember":
-      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
-      html += renderAdminAddMember(); break;
-    case "adminSettings":
-      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
-      html += renderAdminSettings(); break;
-    case "adminDonations":
-      if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
-      html += renderAdminDonations(); break;
-    case "donate": html += renderDonate(); break;
-    case "receipt": html += renderReceipt(); break;
-    default: html += renderHome();
-  }
-  root.innerHTML = html;
-  const searchInput = document.getElementById("memberSearch");
-  if(searchInput){
-    searchInput.focus();
-    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-  }
-  if(state.toast){
-    setTimeout(()=>{ if(state.toast){ state = Object.assign({}, state, {toast:null}); } }, 4000);
-  }
-}
+    window.changePasscode = async function(){
+      const val = document.getElementById("newPassInput").value;
+      const err = document.getElementById("passErr");
+      if(!val || val.length < 4){ err.textContent = "Passcode must be at least 4 characters."; return; }
+      DB.config.adminPass = val;
+      await saveDB();
+      err.style.color = "var(--success)";
+      err.textContent = "Passcode updated successfully.";
+    };
 
-async function init(){
-  root.innerHTML = `<p class="muted" style="padding:40px 0;">Loading ledger…</p>`;
-  try{
-    await loadDB();
-    render();
-  }catch(e){
-    // setup message already shown by loadDB
-  }
-}
-init();
-</script>
-</body>
+    window.toggleMonthSelect = function(ym){
+      const sel = Object.assign({}, state.selectedMonths);
+      sel[ym] = !sel[ym];
+      setState({ selectedMonths: sel });
+    };
+
+    window.startPayment = function(memberId){
+      const m = DB.members.find(x=>x.id===memberId);
+      const errEl = document.getElementById("payErr");
+      errEl.textContent = "";
+      const keyId = DB.config.razorpayKeyId;
+      if(!keyId){
+        errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer.";
+        return;
+      }
+      const due = dueMonthsFor(m);
+      const chosen = due.filter(ym => state.selectedMonths && state.selectedMonths[ym]);
+      const amount = chosen.length * m.fee;
+      if(amount <= 0){ errEl.textContent = "Please select at least one month to pay."; return; }
+      
+      const options = {
+        key: keyId,
+        amount: amount * 100,
+        currency: "INR",
+        name: "Ichhepuron",
+        description: chosen.length + " month(s) dues — " + m.name,
+        handler: async function(response){
+          chosen.forEach(ym => { m.payments[ym] = true; });
+          await saveDB();
+          setState({
+            view: "receipt",
+            receipt: {
+              type: "dues",
+              id: response.razorpay_payment_id || receiptNo(),
+              date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' }),
+              name: m.name,
+              amount,
+              months: chosen.map(ymLabel).join(", ")
+            }
+          });
+        },
+        theme: { color: "#f86f2d" }
+      };
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', () => { errEl.textContent = "Transaction failed or was canceled."; });
+        rzp.open();
+      } catch(e) {
+        errEl.textContent = "Could not initialize Razorpay checkout.";
+      }
+    };
+
+    window.startDonationPayment = function(){
+      const errEl = document.getElementById("donErr");
+      errEl.textContent = "";
+      const name = document.getElementById("donName").value.trim();
+      const email = document.getElementById("donEmail").value.trim();
+      const amount = Number(document.getElementById("donAmount").value);
+      const purpose = document.getElementById("donPurpose").value;
+      
+      if(!name){ errEl.textContent = "Please enter your name."; return; }
+      if(email && !/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent = "Please enter a valid email address."; return; }
+      if(!amount || amount <= 0){ errEl.textContent = "Please enter a valid amount."; return; }
+      
+      const keyId = DB.config.razorpayKeyId;
+      if(!keyId){ errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer."; return; }
+
+      const options = {
+        key: keyId,
+        amount: Math.round(amount * 100),
+        currency: "INR",
+        name: "Ichhepuron",
+        description: "Donation — " + purpose,
+        prefill: { name, email },
+        handler: async function(response){
+          const donation = {
+            id: response.razorpay_payment_id || receiptNo(),
+            name, email, amount, purpose,
+            date: new Date().toLocaleDateString("en-IN", { day:'numeric', month:'short', year:'numeric' })
+          };
+          DB.donations.push(donation);
+          await saveDB();
+          setState({
+            view: "receipt",
+            receipt: { type: "donation", id: donation.id, date: donation.date, name, email, amount, purpose }
+          });
+        },
+        theme: { color: "#f86f2d" }
+      };
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', () => { errEl.textContent = "Donation could not be completed."; });
+        rzp.open();
+      } catch(e) {
+        errEl.textContent = "Could not initialize Razorpay checkout.";
+      }
+    };
+
+    function render(){
+      let html = "";
+      switch(state.view){
+        case "home": html = renderHome(); break;
+        case "memberPick": html = renderMemberPick(); break;
+        case "memberView": html = renderMemberView(); break;
+        case "adminGate": html = renderAdminGate(); break;
+        case "admin":
+          if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+          html = renderAdmin(); break;
+        case "adminAddMember":
+          if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+          html = renderAdminAddMember(); break;
+        case "adminSettings":
+          if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminSettings(); break; }
+          html = renderAdminSettings(); break;
+        case "adminDonations":
+          if(!state.adminAuthed){ state.view="adminGate"; html = renderAdminGate(); break; }
+          html = renderAdminDonations(); break;
+        case "donate": html = renderDonate(); break;
+        case "receipt": html = renderReceipt(); break;
+        default: html = renderHome();
+      }
+      root.innerHTML = html;
+      const searchInput = document.getElementById("memberSearch");
+      if(searchInput){
+        searchInput.focus();
+        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+      }
+    }
+
+    async function init(){
+      root.innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--text-muted);">Loading portal data...</div>`;
+      await loadDB();
+      render();
+    }
+    init();
+  </script>
+  </body>
 </html>
