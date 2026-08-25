@@ -13,22 +13,20 @@
 
     <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
     <link rel="stylesheet" href="css/animate.css">
-    <link rel="stylesheet" href="css/owl.carousel.min.css">
-    <link rel="stylesheet" href="css/owl.theme.default.min.css">
-    <link rel="stylesheet" href="css/magnific-popup.css">
     <link rel="stylesheet" href="css/aos.css">
     <link rel="stylesheet" href="css/ionicons.min.css">
-    <link rel="stylesheet" href="css/bootstrap-datepicker.css">
-    <link rel="stylesheet" href="css/jquery.timepicker.css">
     <link rel="stylesheet" href="css/flaticon.css">
     <link rel="stylesheet" href="css/icomoon.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Removed on this page: owl-carousel / magnific-popup / datepicker /
+         timepicker CSS — nothing on this page uses them, and every KB of
+         CSS/JS parsed adds to memory pressure on low-RAM mobile devices. -->
 
-    <!-- Payment Portal Scripts -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Supabase must load eagerly (needed immediately to fetch ledger data).
+         Razorpay checkout + jsPDF are now loaded ON DEMAND further down,
+         only when the user actually taps Pay / Donate / Export, so they
+         don't sit in memory for the whole session. -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <!-- Custom App Styles (Scoped for the Payment Dashboard) -->
     <style>
@@ -255,12 +253,24 @@
   <script src="js/bootstrap.min.js"></script>
   <script src="js/jquery.easing.1.3.js"></script>
   <script src="js/jquery.waypoints.min.js"></script>
-  <script src="js/jquery.stellar.min.js"></script>
-  <script src="js/owl.carousel.min.js"></script>
-  <script src="js/jquery.magnific-popup.min.js"></script>
   <script src="js/aos.js"></script>
-  <script src="js/jquery.animateNumber.min.js"></script>
-  <script src="js/scrollax.min.js"></script>
+  <!-- Not loaded on this page: owl-carousel, magnific-popup, stellar
+       (parallax), animateNumber, scrollax — nothing on this page uses
+       them, and skipping them cuts a meaningful chunk of JS parse/exec
+       weight, which matters on low-RAM phones. -->
+  <script>
+    // Safety net: if main.js ever calls one of the plugins we didn't load
+    // (or a bootstrap-datepicker call like the one that used to throw here),
+    // make it a harmless no-op instead of an uncaught TypeError.
+    (function(){
+      if(!window.jQuery) return;
+      var noop = function(){ return this; };
+      ["owlCarousel","magnificPopup","stellar","animateNumber","datepicker","timepicker","scrollax"].forEach(function(name){
+        if(!jQuery.fn[name]) jQuery.fn[name] = noop;
+      });
+      window.Scrollax = window.Scrollax || function(){};
+    })();
+  </script>
   <script src="js/main.js"></script>
 
   <!-- Payment Application Logic -->
@@ -396,6 +406,33 @@
     const supabaseClient = (SUPABASE_URL.startsWith("http") && window.supabase)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
+
+    // --- Lazy-load heavy 3rd-party scripts only when actually needed ---
+    const _scriptCache = {};
+    function loadScript(src){
+      if(_scriptCache[src]) return _scriptCache[src];
+      _scriptCache[src] = new Promise((resolve, reject)=>{
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => resolve();
+        s.onerror = () => { delete _scriptCache[src]; reject(new Error("Failed to load " + src)); };
+        document.head.appendChild(s);
+      });
+      return _scriptCache[src];
+    }
+    function ensureRazorpay(){
+      if(window.Razorpay) return Promise.resolve();
+      return loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    }
+    function ensureJsPDF(){
+      if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+      return loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+        .then(()=> loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"));
+    }
+    function ensureHtml2Canvas(){
+      if(window.html2canvas) return Promise.resolve();
+      return loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    }
 
     let DB = null;
 
@@ -645,12 +682,44 @@
             <span style="font-size: 11px; margin-top: 6px; display: block;">This is a computer-generated receipt and does not require a signature.</span>
           </div>
         </div>
-        <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;" class="no-print">
-          <button class="ghost" onclick="window.print()">Print / Save PDF</button>
-          <button class="primary" onclick="setState({view:'home', receipt:null})">Return to Home</button>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;flex-wrap:wrap;" class="no-print">
+          <button class="ghost" onclick="window.print()">Print</button>
+          <button class="primary" id="receiptDownloadBtn" onclick="downloadReceiptPDF()">Download Receipt (PDF)</button>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:10px;" class="no-print">
+          <button class="ghost small" onclick="setState({view:'home', receipt:null})">Return to Home</button>
         </div>
       `;
     }
+
+    // Downloads just the receipt card as a compact, receipt-sized PDF —
+    // no blank A4 page around it, unlike window.print().
+    window.downloadReceiptPDF = async function(){
+      const el = document.querySelector('.receipt');
+      if(!el) return;
+      const btn = document.getElementById('receiptDownloadBtn');
+      const original = btn ? btn.textContent : '';
+      if(btn){ btn.disabled = true; btn.textContent = 'Preparing...'; }
+      try{
+        await ensureHtml2Canvas();
+        await ensureJsPDF();
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        // canvas is at 2x scale; convert CSS px back to points (1px = 0.75pt @ 96dpi)
+        const ptWidth = (canvas.width / 2) * 0.75;
+        const ptHeight = (canvas.height / 2) * 0.75;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: [ptWidth, ptHeight] });
+        doc.addImage(imgData, 'PNG', 0, 0, ptWidth, ptHeight);
+        const r = state.receipt;
+        doc.save("receipt-" + (r && r.id ? r.id : Date.now()) + ".pdf");
+      }catch(e){
+        console.error("Receipt PDF error:", e);
+        alert("Could not generate the receipt PDF. Please try Print instead.");
+      }finally{
+        if(btn){ btn.disabled = false; btn.textContent = original; }
+      }
+    };
 
     function renderAdminGate(){
       return `
@@ -848,9 +917,11 @@
       render();
     };
 
-    window.downloadLedgerPDF = function(){
-      if(!window.jspdf || !window.jspdf.jsPDF){
-        alert("PDF library is still loading. Please try again in a moment.");
+    window.downloadLedgerPDF = async function(){
+      try{
+        await ensureJsPDF();
+      }catch(e){
+        alert("Could not load the PDF library. Check your connection and try again.");
         return;
       }
       const { jsPDF } = window.jspdf;
@@ -926,7 +997,7 @@
     // chain that mobile browsers (esp. iOS Safari, and many Android WebViews)
     // require before they'll allow the checkout overlay to open — so on
     // mobile, tapping "Proceed to Pay" silently did nothing.
-    window.startPayment = function(memberId){
+    window.startPayment = async function(memberId){
       const m = DB.members.find(x=>x.id===memberId);
       const errEl = document.getElementById("payErr");
       errEl.textContent = "";
@@ -935,10 +1006,14 @@
         errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer.";
         return;
       }
-      if(typeof Razorpay === "undefined"){
-        errEl.textContent = "Payment gateway script failed to load. Check your internet connection and reload the page.";
+      errEl.textContent = "Loading secure payment gateway...";
+      try{
+        await ensureRazorpay();
+      }catch(e){
+        errEl.textContent = "Could not load the payment gateway. Check your connection and try again.";
         return;
       }
+      errEl.textContent = "";
       const due = dueMonthsFor(m);
       const chosen = due.filter(ym => state.selectedMonths && state.selectedMonths[ym]);
       const amount = chosen.length * m.fee;
@@ -978,7 +1053,7 @@
       }
     };
 
-    window.startDonationPayment = function(){
+    window.startDonationPayment = async function(){
       const errEl = document.getElementById("donErr");
       errEl.textContent = "";
       const name = document.getElementById("donName").value.trim();
@@ -992,10 +1067,14 @@
       
       const keyId = DB.config.razorpayKeyId;
       if(!keyId){ errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer."; return; }
-      if(typeof Razorpay === "undefined"){
-        errEl.textContent = "Payment gateway script failed to load. Check your internet connection and reload the page.";
+      errEl.textContent = "Loading secure payment gateway...";
+      try{
+        await ensureRazorpay();
+      }catch(e){
+        errEl.textContent = "Could not load the payment gateway. Check your connection and try again.";
         return;
       }
+      errEl.textContent = "";
 
       const options = {
         key: keyId,
