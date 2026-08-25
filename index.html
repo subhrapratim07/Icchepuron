@@ -500,31 +500,37 @@
     });
   </script>
   
-  <!-- Owl Carousel Mobile Scroll Fix -->
+  <!-- Ultimate Owl Carousel Mobile Scroll Fix -->
   <script>
     var touchStartX = 0;
     var touchStartY = 0;
+    var isVerticalScroll = false;
 
-    // Record where the finger first touches the screen
+    // 1. Record exact finger position when touching the screen
     document.addEventListener('touchstart', function(e) {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        isVerticalScroll = false; // Reset flag on new touch
     }, { capture: true, passive: true });
 
-    // Intercept the movement
+    // 2. Intercept the finger movement before Owl Carousel sees it
     document.addEventListener('touchmove', function(e) {
-        // Check if the touch is happening inside a carousel
+        // Only run this if we are touching inside a carousel
         if (e.target.closest('.owl-carousel')) {
             var diffX = Math.abs(e.touches[0].clientX - touchStartX);
             var diffY = Math.abs(e.touches[0].clientY - touchStartY);
             
-            // If the finger is swiping up/down (vertical) more than left/right
-            if (diffY > diffX) {
-                // Stop the event from reaching the carousel, allowing normal scroll
-                e.stopPropagation(); 
+            // If the finger moves vertically more than horizontally (with a tiny 3px buffer)
+            if (diffY > diffX + 3) {
+                isVerticalScroll = true;
+            }
+
+            // If it is a vertical scroll, BLOCK Owl Carousel from stealing the touch!
+            if (isVerticalScroll) {
+                e.stopImmediatePropagation();
             }
         }
-    }, { capture: true, passive: true });
+    }, { capture: true, passive: false });
   </script>
   
   </body>
