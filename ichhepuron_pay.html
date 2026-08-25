@@ -606,37 +606,37 @@ const SEED_MEMBERS = [
   ["Soumen Debnath",200,1,1,1],["Abir Shankhari",500,0,0,0]
 ];
 
-function buildSeed(){
-  const members = SEED_MEMBERS.map((m,i)=>{
-    const payments = {};
-    const flags = [m[2],m[3],m[4]];
-    ["2026-01","2026-02","2026-03"].forEach((k,idx)=>{ payments[k] = !!flags[idx]; });
-    return { id: "m"+(i+1), name: m[0], fee: m[1], payments, joined: "2026-01" };
-  });
-  return { members, donations: [], config: { razorpayKeyId: "", adminPass: "ichhepuron2026" }, updatedAt: Date.now() };
-}
+    function buildSeed(){
+      const members = SEED_MEMBERS.map((m,i)=>{
+        const payments = {};
+        const flags = [m[2],m[3],m[4]];
+        ["2026-01","2026-02","2026-03"].forEach((k,idx)=>{ payments[k] = !!flags[idx]; });
+        return { id: "m"+(i+1), name: m[0], fee: m[1], payments, joined: "2026-01" };
+      });
+      return { members, donations: [], config: { razorpayKeyId: "", adminPass: "ichhepuron2026" }, updatedAt: Date.now() };
+    }
 
-function monthKeysFrom(startYM, endYM){
-  const out = [];
-  let [sy,sm] = startYM.split("-").map(Number);
-  const [ey,em] = endYM.split("-").map(Number);
-  while(sy < ey || (sy===ey && sm<=em)){
-    out.push(sy+"-"+String(sm).padStart(2,"0"));
-    sm++; if(sm>12){sm=1; sy++;}
-  }
-  return out;
-}
-function currentYM(){
-  const d = new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-}
-function ymLabel(ym){
-  const [y,m] = ym.split("-").map(Number);
-  return MONTH_NAMES[m-1]+" "+y;
-}
-function fmtINR(n){
-  return "\u20B9"+Number(n).toLocaleString("en-IN");
-}
+    function monthKeysFrom(startYM, endYM){
+      const out = [];
+      let [sy,sm] = startYM.split("-").map(Number);
+      const [ey,em] = endYM.split("-").map(Number);
+      while(sy < ey || (sy===ey && sm<=em)){
+        out.push(sy+"-"+String(sm).padStart(2,"0"));
+        sm++; if(sm>12){sm=1; sy++;}
+      }
+      return out;
+    }
+    function currentYM(){
+      const d = new Date();
+      return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+    }
+    function ymLabel(ym){
+      const [y,m] = ym.split("-").map(Number);
+      return MONTH_NAMES[m-1]+" "+y;
+    }
+    function fmtINR(n){
+      return "\u20B9"+Number(n).toLocaleString("en-IN");
+    }
 
 const SUPABASE_URL = "https://lbtunkhowosikodceikv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidHVua2hvd29zaWtvZGNlaWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzU2MDEsImV4cCI6MjEwMjkxMTYwMX0.GFUrMC__hY2Bop56QK1LhC70HwjHyKQJ78cfNv-T0eI";
@@ -644,7 +644,7 @@ const supabaseClient = (SUPABASE_URL.startsWith("http") && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-let DB = null;
+    let DB = null;
 
 async function loadDB(){
   try{
@@ -673,21 +673,21 @@ async function saveDB(){
   }
 }
 
-function dueMonthsFor(member){
-  const start = member.joined || "2026-01";
-  const all = monthKeysFrom(start, currentYM());
-  return all.filter(ym => !member.payments[ym]);
-}
-function paidMonthsFor(member){
-  const start = member.joined || "2026-01";
-  const all = monthKeysFrom(start, currentYM());
-  return all.filter(ym => !!member.payments[ym]);
-}
+    function dueMonthsFor(member){
+      const start = member.joined || "2026-01";
+      const all = monthKeysFrom(start, currentYM());
+      return all.filter(ym => !member.payments[ym]);
+    }
+    function paidMonthsFor(member){
+      const start = member.joined || "2026-01";
+      const all = monthKeysFrom(start, currentYM());
+      return all.filter(ym => !!member.payments[ym]);
+    }
 
-let state = { view: "home", memberId: null, adminAuthed: false, query: "", toast: null, selectedMonths: {}, receipt: null };
-const root = document.getElementById("root");
+    let state = { view: "home", memberId: null, adminAuthed: false, query: "", toast: null, selectedMonths: {}, receipt: null };
+    const root = document.getElementById("root");
 
-function setState(patch){ state = Object.assign({}, state, patch); render(); }
+    function setState(patch){ state = Object.assign({}, state, patch); render(); }
 
 function enterMember(memberId){
   const m = DB.members.find(x=>x.id===memberId);
@@ -1003,7 +1003,7 @@ function renderAdminSettings(){
   `;
 }
 
-window.setState = setState;
+    window.setState = setState;
 
 window.tryAdminLogin = function(){
   const val = document.getElementById("adminPassInput").value;
@@ -1014,13 +1014,13 @@ window.tryAdminLogin = function(){
   }
 };
 
-window.toggleMonth = async function(memberId, ym){
-  const m = DB.members.find(x=>x.id===memberId);
-  if(!m) return;
-  m.payments[ym] = !m.payments[ym];
-  await saveDB();
-  render();
-};
+    window.toggleMonth = async function(memberId, ym){
+      const m = DB.members.find(x=>x.id===memberId);
+      if(!m) return;
+      m.payments[ym] = !m.payments[ym];
+      await saveDB();
+      render();
+    };
 
 window.addMember = async function(){
   const name = document.getElementById("newName").value.trim();
@@ -1115,11 +1115,11 @@ window.changePasscode = async function(){
   err.textContent = "Passcode updated successfully.";
 };
 
-window.toggleMonthSelect = function(ym){
-  const sel = Object.assign({}, state.selectedMonths);
-  sel[ym] = !sel[ym];
-  setState({ selectedMonths: sel });
-};
+    window.toggleMonthSelect = function(ym){
+      const sel = Object.assign({}, state.selectedMonths);
+      sel[ym] = !sel[ym];
+      setState({ selectedMonths: sel });
+    };
 
 window.startPayment = function(memberId){
   const m = DB.members.find(x=>x.id===memberId);
