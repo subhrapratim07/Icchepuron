@@ -1020,7 +1020,8 @@
         key: keyId,
         amount: amount * 100,
         currency: "INR",
-        name: "Ichhepuron",
+        name: "Icchepuron",
+        image: "./logo.png",
         description: chosen.length + " month(s) dues — " + m.name,
         handler: async function(response){
           chosen.forEach(ym => { m.payments[ym] = true; });
@@ -1077,7 +1078,8 @@
         key: keyId,
         amount: Math.round(amount * 100),
         currency: "INR",
-        name: "Ichhepuron",
+        name: "Icchepuron",
+        image: "./logo.png",
         description: "Donation — " + purpose,
         prefill: { name, email },
         handler: async function(response){
