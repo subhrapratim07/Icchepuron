@@ -921,6 +921,11 @@
       setState({ selectedMonths: sel });
     };
 
+    // FIX: Razorpay checkout must be opened SYNCHRONOUSLY inside the click
+    // handler. The previous setTimeout(...,150) broke the "user gesture"
+    // chain that mobile browsers (esp. iOS Safari, and many Android WebViews)
+    // require before they'll allow the checkout overlay to open — so on
+    // mobile, tapping "Proceed to Pay" silently did nothing.
     window.startPayment = function(memberId){
       const m = DB.members.find(x=>x.id===memberId);
       const errEl = document.getElementById("payErr");
@@ -928,6 +933,10 @@
       const keyId = DB.config.razorpayKeyId;
       if(!keyId){
         errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer.";
+        return;
+      }
+      if(typeof Razorpay === "undefined"){
+        errEl.textContent = "Payment gateway script failed to load. Check your internet connection and reload the page.";
         return;
       }
       const due = dueMonthsFor(m);
@@ -959,15 +968,14 @@
         theme: { color: "#f86f2d" }
       };
 
-      setTimeout(() => {
-        try {
-          const rzp = new Razorpay(options);
-          rzp.on('payment.failed', () => { errEl.textContent = "Transaction failed or was canceled."; });
-          rzp.open();
-        } catch(e) {
-          errEl.textContent = "Could not initialize Razorpay checkout.";
-        }
-      }, 150);
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', () => { errEl.textContent = "Transaction failed or was canceled."; });
+        rzp.open();
+      } catch(e) {
+        console.error("Razorpay init error:", e);
+        errEl.textContent = "Could not initialize Razorpay checkout.";
+      }
     };
 
     window.startDonationPayment = function(){
@@ -984,6 +992,10 @@
       
       const keyId = DB.config.razorpayKeyId;
       if(!keyId){ errEl.textContent = "Online payment gateway is not active yet. Please contact the treasurer."; return; }
+      if(typeof Razorpay === "undefined"){
+        errEl.textContent = "Payment gateway script failed to load. Check your internet connection and reload the page.";
+        return;
+      }
 
       const options = {
         key: keyId,
@@ -1008,15 +1020,14 @@
         theme: { color: "#f86f2d" }
       };
 
-      setTimeout(() => {
-        try {
-          const rzp = new Razorpay(options);
-          rzp.on('payment.failed', () => { errEl.textContent = "Donation could not be completed."; });
-          rzp.open();
-        } catch(e) {
-          errEl.textContent = "Could not initialize Razorpay checkout.";
-        }
-      }, 150);
+      try {
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', () => { errEl.textContent = "Donation could not be completed."; });
+        rzp.open();
+      } catch(e) {
+        console.error("Razorpay init error:", e);
+        errEl.textContent = "Could not initialize Razorpay checkout.";
+      }
     };
 
     function render(){
