@@ -268,6 +268,8 @@
       ["owlCarousel","magnificPopup","stellar","animateNumber","datepicker","timepicker","scrollax"].forEach(function(name){
         if(!jQuery.fn[name]) jQuery.fn[name] = noop;
       });
+      // main.js calls this as a static $.Scrollax(...), not a $.fn plugin
+      jQuery.Scrollax = jQuery.Scrollax || function(){ return this; };
       window.Scrollax = window.Scrollax || function(){};
     })();
   </script>
@@ -683,39 +685,33 @@
           </div>
         </div>
         <div style="display:flex;justify-content:center;gap:12px;margin-top:20px;flex-wrap:wrap;" class="no-print">
-          <button class="ghost" onclick="window.print()">Print</button>
-          <button class="primary" id="receiptDownloadBtn" onclick="downloadReceiptPDF()">Download Receipt (PDF)</button>
-        </div>
-        <div style="display:flex;justify-content:center;margin-top:10px;" class="no-print">
-          <button class="ghost small" onclick="setState({view:'home', receipt:null})">Return to Home</button>
+          <button class="primary" id="receiptDownloadBtn" onclick="downloadReceiptImage()">Save</button>
+          <button class="ghost" onclick="setState({view:'home', receipt:null})">Home</button>
         </div>
       `;
     }
 
-    // Downloads just the receipt card as a compact, receipt-sized PDF —
-    // no blank A4 page around it, unlike window.print().
-    window.downloadReceiptPDF = async function(){
+    // Downloads just the receipt card as a JPG image — no PDF, no print dialog.
+    window.downloadReceiptImage = async function(){
       const el = document.querySelector('.receipt');
       if(!el) return;
       const btn = document.getElementById('receiptDownloadBtn');
       const original = btn ? btn.textContent : '';
-      if(btn){ btn.disabled = true; btn.textContent = 'Preparing...'; }
+      if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
       try{
         await ensureHtml2Canvas();
-        await ensureJsPDF();
         const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const imgData = canvas.toDataURL('image/png');
-        // canvas is at 2x scale; convert CSS px back to points (1px = 0.75pt @ 96dpi)
-        const ptWidth = (canvas.width / 2) * 0.75;
-        const ptHeight = (canvas.height / 2) * 0.75;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'pt', format: [ptWidth, ptHeight] });
-        doc.addImage(imgData, 'PNG', 0, 0, ptWidth, ptHeight);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
         const r = state.receipt;
-        doc.save("receipt-" + (r && r.id ? r.id : Date.now()) + ".pdf");
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = "receipt-" + (r && r.id ? r.id : Date.now()) + ".jpg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }catch(e){
-        console.error("Receipt PDF error:", e);
-        alert("Could not generate the receipt PDF. Please try Print instead.");
+        console.error("Receipt image error:", e);
+        alert("Could not save the receipt image. Please try again.");
       }finally{
         if(btn){ btn.disabled = false; btn.textContent = original; }
       }
