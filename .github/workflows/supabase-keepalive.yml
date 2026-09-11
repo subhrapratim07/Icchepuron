@@ -9,9 +9,24 @@ jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
+      - name: Check secrets are set
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::SUPABASE_URL secret is missing or empty. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::SUPABASE_ANON_KEY secret is missing or empty. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          echo "Secrets look present. URL host: $(echo "$SUPABASE_URL" | sed -E 's#https?://##; s#/.*##')"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
       - name: Touch the kv_store table
         run: |
-          curl -s -X POST \
+          curl -sS -X POST \
             "$SUPABASE_URL/rest/v1/kv_store?on_conflict=key" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
