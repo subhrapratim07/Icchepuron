@@ -492,7 +492,7 @@
     window.doSearch = function(val){
       state.query = val;
       const q = val.toLowerCase().trim();
-      const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : DB.members.slice(0, 5);
+      const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : [];
       const drop = document.getElementById("searchDropdown");
       if(drop){
         drop.style.display = matches.length ? 'block' : 'none';
@@ -553,7 +553,7 @@
 
     function renderMemberPick(){
       const q = state.query.toLowerCase().trim();
-      const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : DB.members.slice(0, 5);
+      const matches = q ? DB.members.filter(m=>m.name.toLowerCase().includes(q)).slice(0,8) : [];
       return `
         <a class="back" onclick="setState({view:'home',query:''})">&larr; Back to Options</a>
         <div class="card-app" style="max-width:540px;">
