@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Icchepuron - Events</title>
+    <link rel="icon" href="./logo.png" type="image/png">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Dosis:200,300,400,500,700" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Overpass:300,400,400i,600,700" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/open-iconic-bootstrap.min.css">
+    <link rel="stylesheet" href="css/animate.css">
+    <link rel="stylesheet" href="css/aos.css">
+    <link rel="stylesheet" href="css/ionicons.min.css">
+    <link rel="stylesheet" href="css/flaticon.css">
+    <link rel="stylesheet" href="css/icomoon.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+      :root { --ev-primary: #F96D00; --ev-mid: #fa8a34; --ev-amber: #faaa3a;
+              --ev-dark: #1f2421; --ev-line: #e6e9e7; --ev-muted: #7a827c; }
+
+      /* ---------- BANNER ---------- */
+      .ev-hero { position: relative; background: url('images/hero.jpg') center center / cover no-repeat; }
+      .ev-hero .ev-ov { position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(20,24,21,.82) 0%, rgba(20,24,21,.55) 45%, rgba(20,24,21,.88) 100%); }
+      .ev-hero .ev-inner { position: relative; z-index: 2; text-align: center; padding: 150px 15px 70px; }
+      .ev-hero .ev-kicker { font-size: 11px; letter-spacing: .3em; text-transform: uppercase;
+        color: var(--ev-amber); font-weight: 700; margin-bottom: 14px; }
+      .ev-hero h1 { font-family: 'Dosis', sans-serif; font-weight: 700; color: #fff; font-size: 62px;
+        line-height: 1; margin: 0 0 18px; letter-spacing: -.5px; }
+      .ev-hero .ev-rule { width: 70px; height: 3px; background: var(--ev-primary); margin: 0 auto 18px; }
+      .ev-hero .ev-tag { color: rgba(255,255,255,.82); font-size: 16px; max-width: 620px; margin: 0 auto; line-height: 1.6; }
+      .ev-hero .ev-crumb { margin-top: 22px; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+      .ev-hero .ev-crumb a { color: rgba(255,255,255,.8); text-decoration: none; }
+
+      /* stats band sitting under the banner (flat blocks, same family as the home page) */
+      .ev-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+      .ev-stat { padding: 30px 22px; text-align: center; color: #fff; }
+      .ev-stat:nth-child(1) { background: var(--ev-primary); }
+      .ev-stat:nth-child(2) { background: var(--ev-mid); }
+      .ev-stat:nth-child(3) { background: var(--ev-amber); }
+      .ev-stat:nth-child(4) { background: var(--ev-dark); }
+      .ev-stat .n { font-family: 'Dosis', sans-serif; font-weight: 700; font-size: 40px; line-height: 1; display: block; }
+      .ev-stat .t { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; margin-top: 8px; opacity: .92; }
+
+      /* ---------- JUMP BAR ---------- */
+      .ev-toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 46px; }
+      .ev-chip { font-family: 'Overpass', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 18px;
+        border: 1px solid var(--ev-line); background: #fff; color: var(--ev-dark); text-decoration: none; transition: .15s; }
+      .ev-chip:hover { background: var(--ev-primary); border-color: var(--ev-primary); color: #fff; text-decoration: none; }
+
+      /* ---------- EVENT CARD ---------- */
+      .ev-card { background: #fff; border: 1px solid var(--ev-line); margin-bottom: 50px;
+        box-shadow: 0 8px 26px rgba(0,0,0,.06); scroll-margin-top: 90px; }
+      .ev-row { display: flex; flex-wrap: wrap; }
+      .ev-row.flip { flex-direction: row-reverse; }
+      .ev-col-media { flex: 0 0 45%; max-width: 45%; }
+      .ev-col-body  { flex: 0 0 55%; max-width: 55%; }
+
+      .ev-media { position: relative; height: 100%; min-height: 430px; background-size: cover; background-position: center; }
+      .ev-media::after { content: ''; position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,.35) 100%); }
+      .ev-ribbon { position: absolute; top: 22px; left: 0; z-index: 3; background: var(--ev-primary); color: #fff;
+        padding: 10px 18px 10px 22px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+      .ev-ribbon .d { font-family: 'Dosis', sans-serif; font-size: 30px; font-weight: 700; line-height: 1; display: block; }
+      .ev-ribbon .m { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+      .ev-num { position: absolute; bottom: 18px; right: 20px; z-index: 3; font-family: 'Dosis', sans-serif;
+        font-size: 60px; font-weight: 700; color: rgba(255,255,255,.28); line-height: 1; }
+
+      .ev-body { padding: 40px 40px 34px; }
+      .ev-body h2 { font-family: 'Dosis', sans-serif; font-weight: 700; font-size: 32px; color: var(--ev-dark);
+        margin: 0 0 6px; line-height: 1.12; }
+      .ev-body .ev-sub { font-size: 13px; color: var(--ev-muted); margin: 0 0 22px; font-style: italic; }
+      .ev-body p.ev-desc { font-size: 15px; line-height: 1.8; color: #555c57; margin-bottom: 22px; }
+
+      .ev-facts { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--ev-line); margin-bottom: 26px; }
+      .ev-fact { padding: 15px 16px; border-right: 1px solid var(--ev-line); }
+      .ev-fact:last-child { border-right: none; }
+      .ev-fact .l { font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--ev-muted);
+        font-weight: 700; display: block; margin-bottom: 5px; }
+      .ev-fact .v { font-family: 'Dosis', sans-serif; font-size: 20px; font-weight: 700; color: var(--ev-dark); line-height: 1.15; }
+      .ev-fact .v.hi { color: var(--ev-primary); }
+      .ev-fact .v small { font-family: 'Overpass', sans-serif; font-size: 11.5px; font-weight: 400;
+        color: var(--ev-muted); display: block; margin-top: 3px; }
+
+      .ev-points { list-style: none; padding: 0; margin: 0 0 26px; }
+      .ev-points li { position: relative; padding-left: 26px; font-size: 14px; line-height: 1.6;
+        color: #555c57; margin-bottom: 9px; }
+      .ev-points li::before { content: ''; position: absolute; left: 0; top: 8px; width: 12px; height: 2px; background: var(--ev-primary); }
+
+      .ev-gal-label { font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: var(--ev-muted);
+        font-weight: 700; margin-bottom: 10px; padding-top: 4px; border-top: 1px solid var(--ev-line); padding-top: 18px; }
+      .ev-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .ev-gallery img { width: 100%; height: 88px; object-fit: cover; cursor: zoom-in; transition: .18s; display: block; }
+      .ev-gallery img:hover { transform: scale(1.05); }
+      .ev-gallery.solo { grid-template-columns: 1fr; }
+      .ev-gallery.solo img { height: 190px; }
+      .ev-gallery.duo { grid-template-columns: repeat(2, 1fr); }
+      .ev-gallery.duo img { height: 150px; }
+      .ev-gallery.trio { grid-template-columns: repeat(3, 1fr); }
+      .ev-gallery.trio img { height: 120px; }
+
+      /* ---------- CLOSING CTA ---------- */
+      .ev-cta { display: grid; grid-template-columns: repeat(2, 1fr); margin-top: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.1); }
+      .ev-cta a { padding: 40px 30px; text-align: center; color: #fff; text-decoration: none; transition: filter .18s; }
+      .ev-cta a:hover { filter: brightness(1.07); color: #fff; text-decoration: none; }
+      .ev-cta a:nth-child(1) { background: var(--ev-primary); }
+      .ev-cta a:nth-child(2) { background: var(--ev-amber); }
+      .ev-cta h3 { font-family: 'Dosis', sans-serif; font-weight: 400; font-size: 26px; color: #fff; margin-bottom: 8px; }
+      .ev-cta p { font-size: 13.5px; color: rgba(255,255,255,.92); margin: 0; }
+
+      /* ---------- LIGHTBOX ---------- */
+      .ev-lightbox { position: fixed; inset: 0; background: rgba(15,18,16,.93); display: none; align-items: center;
+        justify-content: center; z-index: 2000; padding: 24px; }
+      .ev-lightbox.open { display: flex; }
+      .ev-lightbox img { max-width: 100%; max-height: 90vh; }
+      .ev-lightbox .x { position: absolute; top: 18px; right: 26px; color: #fff; font-size: 36px; cursor: pointer; line-height: 1; }
+
+      @media (max-width: 991px) {
+        .ev-hero .ev-inner { padding: 120px 15px 55px; }
+        .ev-hero h1 { font-size: 42px; }
+        .ev-hero .ev-tag { font-size: 14.5px; }
+        .ev-stats { grid-template-columns: repeat(2, 1fr); }
+        .ev-stat { padding: 22px 16px; }
+        .ev-stat .n { font-size: 32px; }
+        .ev-col-media, .ev-col-body { flex: 0 0 100%; max-width: 100%; }
+        .ev-media { min-height: 240px; }
+        .ev-body { padding: 26px 22px 24px; }
+        .ev-body h2 { font-size: 26px; }
+        .ev-facts { grid-template-columns: repeat(2, 1fr); }
+        .ev-fact:nth-child(1), .ev-fact:nth-child(2) { border-bottom: 1px solid var(--ev-line); }
+        .ev-fact:nth-child(2) { border-right: none; }
+        .ev-gallery img { height: 74px; }
+        .ev-cta { grid-template-columns: 1fr; }
+        .ev-cta a { padding: 28px 20px; }
+      }
+      @media (max-width: 575px) {
+        .ev-hero h1 { font-size: 34px; }
+        .ev-gallery { grid-template-columns: repeat(2, 1fr); }
+        .ev-gallery.trio, .ev-gallery.duo { grid-template-columns: repeat(2, 1fr); }
+        .ev-gallery img, .ev-gallery.trio img, .ev-gallery.duo img { height: 100px; }
+      }
+    </style>
+  </head>
+  <body>
+
+  <!-- Theme Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark ftco_navbar bg-dark ftco-navbar-light" id="ftco-navbar">
+    <div class="container">
+      <a class="navbar-brand" style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;" href="index.html">
+        <img src="./logo.png" alt="Icchepuron Logo" style="height: 40px; width: auto; margin-right: 10px;">
+        Icchepuron
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="oi oi-menu"></span> Menu
+      </button>
+      <div class="collapse navbar-collapse" id="ftco-nav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item"><a href="index.html#home" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="index.html#about" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="index.html#causes" class="nav-link">Ambitions</a></li>
+          <li class="nav-item active"><a href="events.html" class="nav-link">Events</a></li>
+          <li class="nav-item"><a href="index.html#contact" class="nav-link">Contact</a></li>
+          <li class="nav-item"><a href="edu.html" class="nav-link">Education</a></li>
+          <li class="nav-item"><a href="nari.html" class="nav-link">NariRaksha</a></li>
+          <li class="nav-item"><a href="ichhepuron_pay.html" class="nav-link" style="color:#F96D00;font-weight:bold;">Pay Portal</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Banner -->
+  <div class="ev-hero">
+    <div class="ev-ov"></div>
+    <div class="ev-inner">
+      <div class="ev-kicker">Icchepuron &bull; Nahata, North 24 Parganas</div>
+      <h1>Our Events</h1>
+      <div class="ev-rule"></div>
+      <p class="ev-tag">Six days of the year that bring our members, volunteers and the families
+        around us together &mdash; kept running without a break since 2019.</p>
+      <p class="ev-crumb"><a href="index.html">Home</a> &nbsp;/&nbsp; Events</p>
+    </div>
+  </div>
+  <div class="ev-stats" id="evStats"></div>
+
+  <section class="ftco-section bg-light" style="padding-top: 60px;">
+    <div class="container">
+
+      <div class="row justify-content-center mb-4">
+        <div class="col-md-8 heading-section ftco-animate text-center">
+          <h2 class="mb-4">Events We Observe Every Year</h2>
+        </div>
+      </div>
+
+      <div class="ev-toolbar ftco-animate" id="evJump"></div>
+
+      <div id="evList"></div>
+
+      <div class="ev-cta ftco-animate">
+        <a href="index.html#contact">
+          <h3>Join the next one</h3>
+          <p>Sign up as a volunteer and stand with us on the ground.</p>
+        </a>
+        <a href="ichhepuron_pay.html">
+          <h3>Support an event</h3>
+          <p>Contribute towards blankets, books, saplings and refreshments.</p>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="ev-lightbox" id="evLightbox" onclick="closeLightbox()">
+    <span class="x">&times;</span>
+    <img id="evLightboxImg" src="" alt="Event photo">
+  </div>
+
+  <!-- Theme Footer -->
+  <footer class="ftco-footer ftco-section img" style="font-size: 15px; padding: 10px 0;">
+    <div class="overlay"></div>
+    <div class="container">
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">About Us</h2>
+            <p>Icchepuron, an NGO was founded to walk with aboriginal and to provide adequate light of education to them.</p>
+            <ul class="ftco-footer-social list-unstyled float-md-left float-lft mt-2">
+              <li class="ftco-animate"><a><span class="icon-twitter"></span></a></li>
+              <li class="ftco-animate"><a href="https://www.facebook.com/Icchepuron2019"><span class="icon-facebook"></span></a></li>
+              <li class="ftco-animate"><a href="https://www.instagram.com/_icchepuron_/"><span class="icon-instagram"></span></a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">Have a Questions?</h2>
+            <div class="block-23 mb-2">
+              <ul>
+                <li><span class="icon icon-map-marker"></span><span class="text">Near Chowberia-II gram panchayat,Nahata,Gopalnagar,North 24 pgs,West bengal,743290</span></li>
+                <li><a><span class="icon icon-phone"></span><span class="text">+91 87688 71114</span></a></li>
+                <li><a><span class="icon icon-envelope"></span><span class="text">icchepuron2019.nahata@gmail.com</span></a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="ftco-footer-widget mb-2">
+            <h2 class="ftco-heading-2">Our Location</h2>
+            <div class="map-container" style="height: 200px;">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3065.473044481011!2d88.70396507531294!3d22.993319979194318!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjLCsDU5JzM2LjAiTiA4OMKwNDInMjMuNSJF!5e1!3m2!1sen!2sin!4v1727079080248!5m2!1sen!2sin"
+                width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <p style="margin-bottom: 0;">
+            Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This Page is made by <a href="https://subhra-portfolio.netlify.app/" target="_blank">SUBHRA07</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Theme Scripts -->
+  <script src="js/jquery.min.js"></script>
+  <script src="js/jquery-migrate-3.0.1.min.js"></script>
+  <script src="js/popper.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/jquery.easing.1.3.js"></script>
+  <script src="js/jquery.waypoints.min.js"></script>
+  <script src="js/aos.js"></script>
+  <script>
+    (function(){
+      if(!window.jQuery) return;
+      var noop = function(){ return this; };
+      ["owlCarousel","magnificPopup","stellar","animateNumber","datepicker","timepicker","scrollax"].forEach(function(n){
+        if(!jQuery.fn[n]) jQuery.fn[n] = noop;
+      });
+      jQuery.Scrollax = jQuery.Scrollax || function(){ return this; };
+      window.Scrollax = window.Scrollax || function(){};
+    })();
+  </script>
+  <script src="js/main.js"></script>
+
+  <!-- ================= EVENT DATA =================
+       Edit one object below to edit an event.
+         month : 1-12          day : date of the month
+         approx: true  -> the date shifts every year (shown as "date varies")
+         since : first year Icchepuron observed this day
+         points: 3 short highlight lines
+         photos: put real photos in  images/events/  using these names.
+                 Any file that does not exist is hidden automatically, and the
+                 photo grid re-sizes itself to whatever photos are present.
+  -->
+  <script>
+    const EVENTS = [
+      {
+        id: "matribhasha",
+        name: "\u0986\u09A8\u09CD\u09A4\u09B0\u09CD\u099C\u09BE\u09A4\u09BF\u0995 \u09AE\u09BE\u09A4\u09C3\u09AD\u09BE\u09B7\u09BE \u09A6\u09BF\u09AC\u09B8",
+        subtitle: "International Mother Language Day",
+        month: 2, day: 21, approx: false, since: 2020,
+        image: "images/event1.jpg",
+        photos: ["images/events/21 feb 2.jpg","images/events/21 feb 3.jpg","images/events/21 feb 4.jpg"],
+        points: [
+          "Prabhat Pheri through the locality at dawn",
+          "Floral tribute at the Shaheed Bedi",
+          "Bengali story books handed to every student who takes part"
+        ],
+        desc: "Every 21st February we gather at Nahata to remember the language martyrs of 1952. The morning begins with a Prabhat Pheri through the locality, followed by floral tribute at the Shaheed Bedi, recitation and songs by children of our education centre, and a short open session on why the mother tongue must be carried forward by the next generation."
+      },
+      {
+        id: "environment-day",
+        name: "World Environment Day",
+        subtitle: "\u09AC\u09BF\u09B6\u09CD\u09AC \u09AA\u09B0\u09BF\u09AC\u09C7\u09B6 \u09A6\u09BF\u09AC\u09B8",
+        month: 6, day: 5, approx: false, since: 2020,
+        image: "images/event3.jpg",
+        photos: ["images/events/5th june 2.jpg","images/events/5th june 3.jpg","images/events/5th june 4.jpg"],
+        points: [
+          "Sapling plantation across schools, roadsides and courtyards",
+          "One sapling handed to every family that attends",
+          "Cleanliness walk and awareness meeting on plastic and water waste"
+        ],
+        desc: "On 5th June our volunteers plant saplings across schools, roadsides and household courtyards in and around Nahata, and hand over a sapling to every family that attends. Families who take a sapling are followed up later in the year to see how the plant is doing."
+      },
+      {
+        id: "independence-day",
+        name: "Independence Day",
+        subtitle: "\u09B8\u09CD\u09AC\u09BE\u09A7\u09C0\u09A8\u09A4\u09BE \u09A6\u09BF\u09AC\u09B8",
+        month: 8, day: 15, approx: false, since: 2020,
+        image: "images/event2.jpg",
+        photos: ["images/events/15 aug 1.jpg","images/events/15 aug 2.jpg","images/events/15 aug 3.jpg"],
+        points: [
+          "Flag hoisting and national anthem at the Icchepuron centre",
+          "Drawing and recitation competition for local children",
+          "Felicitation of freedom fighters' families and senior citizens"
+        ],
+        desc: "The day starts with flag hoisting at the Icchepuron centre, followed by the national anthem, patriotic songs and competitions for the children of the area. Sweets and refreshments are distributed to every child present."
+      },
+      {
+        id: "foundation-day",
+        name: "Icchepuron Foundation Day",
+        subtitle: "\u09AA\u09CD\u09B0\u09A4\u09BF\u09B7\u09CD\u09A0\u09BE \u09A6\u09BF\u09AC\u09B8 \u2014 established 3rd October 2019",
+        month: 10, day: 3, approx: false, since: 2019,
+        image: "images/events/help desk on 3rd oct 4.jpg",
+        photos: ["images/events/blood donation on 3rd oct 1.jpg","images/events/blood donation on 3rd oct 2.jpg","images/events/blood donation on 3rd oct 3.jpg","images/events/foundation-4.jpg"],
+        points: [
+          "Year in review and open presentation of the accounts",
+          "Blood donation or health check-up camp",
+          "Felicitation of volunteers and plans for the coming year"
+        ],
+        desc: "Our birthday. On 3rd October the whole team, members and well-wishers come together to look back at the year gone by \u2014 the families reached, the students supported and the accounts presented openly to all members."
+      },
+      {
+        id: "puja-parikrama",
+        name: "Puja Parikrama",
+        subtitle: "\u09AA\u09C2\u099C\u09BE \u09AA\u09B0\u09BF\u0995\u09CD\u09B0\u09AE\u09BE \u2014 Durga Puja week",
+        month: 10, day: 10, approx: true, since: 2021,
+        image: "images/event6.jpg",
+        photos: ["images/events/puja porikrama 1.jpg","images/events/puja porikrama 2.jpg","images/events/puja porikrama 3.jpg"],
+        points: [
+          "Guided pandal tour for children and elderly members",
+          "New clothes handed over before the Puja",
+          "Transport and food for the whole day arranged by the association"
+        ],
+        desc: "During Durga Puja we take the children of our education centre and elderly members of the locality \u2014 many of whom would otherwise never step out during the festival \u2014 on a guided pandal tour. The exact date depends on the Puja calendar and is announced on our Facebook page each year."
+      },
+      {
+        id: "winter-distribution",
+        name: "Winter Clothes Distribution",
+        subtitle: "\u09B6\u09C0\u09A4\u09AC\u09B8\u09CD\u09A4\u09CD\u09B0 \u09AC\u09BF\u09A4\u09B0\u09A3",
+        month: 12, day: 25, approx: true, since: 2019,
+        image: "images/event5.jpg",
+        photos: ["images/events/winter cloth 3.jpg","images/events/winter cloth 4.jpg","images/events/winter cloth 5.jpg"],
+        points: [
+          "Blankets, sweaters and warm clothes collected through the year",
+          "Door-to-door delivery for those who cannot travel",
+          "Donation window stays open from November"
+        ],
+        desc: "Through December our volunteers identify families, rickshaw pullers, daily labourers and elderly people around Nahata who face the cold without a blanket, and distribute warm clothes collected from donors and members through the year."
+      }
+    ];
+
+    (function(){
+      const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      const SHORT  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const today = new Date(); today.setHours(0,0,0,0);
+      const FOUNDED = 2019;
+
+      function nextOccurrence(ev){
+        let d = new Date(today.getFullYear(), ev.month-1, ev.day);
+        if(d < today) d = new Date(today.getFullYear()+1, ev.month-1, ev.day);
+        return d;
+      }
+      function editions(ev){
+        const thisYear = new Date(today.getFullYear(), ev.month-1, ev.day);
+        let n = today.getFullYear() - ev.since;
+        if(thisYear <= today) n += 1;
+        return Math.max(n, 0);
+      }
+      function ordinal(n){ const s=["th","st","nd","rd"], v=n%100; return n + (s[(v-20)%10] || s[v] || s[0]); }
+      function fmt(d, approx){
+        return approx ? MONTHS[d.getMonth()] + " " + d.getFullYear()
+                      : d.getDate() + " " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+      }
+
+      // ---- stats band ----
+      const yearsRunning = today.getFullYear() - FOUNDED + (today >= new Date(today.getFullYear(),9,3) ? 1 : 0);
+      let totalEditions = 0;
+      EVENTS.forEach(ev => { ev._next = nextOccurrence(ev); ev._n = editions(ev); totalEditions += ev._n; });
+      document.getElementById("evStats").innerHTML = `
+        <div class="ev-stat"><span class="n">${EVENTS.length}</span><div class="t">Annual Events</div></div>
+        <div class="ev-stat"><span class="n">${FOUNDED}</span><div class="t">Running Since</div></div>
+        <div class="ev-stat"><span class="n">${yearsRunning}</span><div class="t">Years Of Service</div></div>
+        <div class="ev-stat"><span class="n">${totalEditions}</span><div class="t">Editions Held</div></div>`;
+
+      // ---- jump bar (calendar order) ----
+      const jump = EVENTS.slice().sort((a,b)=> a.month - b.month || a.day - b.day);
+      document.getElementById("evJump").innerHTML =
+        jump.map(ev => `<a class="ev-chip" href="#${ev.id}">${ev.name}</a>`).join("");
+
+      // ---- cards ----
+      document.getElementById("evList").innerHTML = EVENTS.map((ev, i) => {
+        const n = ev._n;
+        const left = Math.round((ev._next - today) / 86400000);
+        const heldOn = ev.approx ? MONTHS[ev.month-1] : ev.day + " " + MONTHS[ev.month-1];
+        const shots = [ev.image].concat(ev.photos || []);
+        const cls = shots.length === 1 ? 'solo' : shots.length === 2 ? 'duo' : shots.length === 3 ? 'trio' : '';
+        return `
+        <div class="ev-card ftco-animate" id="${ev.id}">
+          <div class="ev-row${i % 2 ? ' flip' : ''}">
+            <div class="ev-col-media">
+              <div class="ev-media" style="background-image:url('${ev.image}');">
+                <div class="ev-ribbon">
+                  <span class="d">${ev.approx ? SHORT[ev.month-1] : ev.day}</span>
+                  <span class="m">${ev.approx ? 'every year' : SHORT[ev.month-1]}</span>
+                </div>
+                <span class="ev-num">${String(i+1).padStart(2,'0')}</span>
+              </div>
+            </div>
+            <div class="ev-col-body">
+              <div class="ev-body">
+                <h2>${ev.name}</h2>
+                <p class="ev-sub">${ev.subtitle}</p>
+
+                <div class="ev-facts">
+                  <div class="ev-fact"><span class="l">Held On</span>
+                    <div class="v">${heldOn}<small>${ev.approx ? 'date varies' : 'every year'}</small></div></div>
+                  <div class="ev-fact"><span class="l">Observed Since</span>
+                    <div class="v">${ev.since}<small>${n} consecutive ${n===1?'year':'years'}</small></div></div>
+                  <div class="ev-fact"><span class="l">Next Edition</span>
+                    <div class="v hi">${fmt(ev._next, ev.approx)}<small>${ordinal(n+1)} year</small></div></div>
+                  <div class="ev-fact"><span class="l">Countdown</span>
+                    <div class="v">${left === 0 ? 'Today' : left + ' days'}<small>${ev.approx ? 'approximate' : 'to go'}</small></div></div>
+                </div>
+
+                <p class="ev-desc">${ev.desc}</p>
+
+                <ul class="ev-points">
+                  ${(ev.points||[]).map(p => `<li>${p}</li>`).join("")}
+                </ul>
+
+                <div class="ev-gal-label">Moments from previous years</div>
+                <div class="ev-gallery ${cls}">
+                  ${shots.map(src => `<img src="${src}" alt="${ev.name}" loading="lazy" onerror="evShot(this)" onclick="openLightbox('${src}')">`).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join("");
+
+      // reveal cards (they are injected after the theme animation script has run)
+      setTimeout(function(){
+        document.querySelectorAll('#evList .ftco-animate, .ev-cta').forEach(function(el){
+          el.classList.add('item-animate','fadeInUp','ftco-animated');
+        });
+      }, 60);
+
+      if(location.hash){
+        const t = document.getElementById(location.hash.slice(1));
+        if(t) setTimeout(()=> t.scrollIntoView({behavior:'smooth', block:'start'}), 250);
+      }
+    })();
+
+    // drop a photo that does not exist, then re-fit the grid to what is left
+    function evShot(img){
+      const grid = img.parentNode;
+      img.remove();
+      const k = grid.children.length;
+      grid.classList.remove('solo','duo','trio');
+      if(k === 1) grid.classList.add('solo');
+      else if(k === 2) grid.classList.add('duo');
+      else if(k === 3) grid.classList.add('trio');
+    }
+
+    function openLightbox(src){
+      document.getElementById("evLightboxImg").src = src;
+      document.getElementById("evLightbox").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeLightbox(){
+      document.getElementById("evLightbox").classList.remove("open");
+      document.body.style.overflow = "";
+    }
+    document.addEventListener("keydown", e => { if(e.key === "Escape") closeLightbox(); });
+  </script>
+
+  </body>
+</html>
